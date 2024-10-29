@@ -1,6 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 import time
 import telebot
 import sys
@@ -38,7 +39,11 @@ def getPage(driver):
 def startPolling():
     chrome_options = Options()
     chrome_options.add_argument("--headless")
-    driver = webdriver.Chrome(options=chrome_options)
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_service = Service(executable_path="./chromedriver")
+    driver = webdriver.Chrome(service=chrome_service , options=chrome_options)
+    print("DRIVER STARTED")
     auth(driver)
     bot.send_message(id, "Авторизация пройдена")
     while True:
@@ -48,5 +53,5 @@ if __name__ == "__main__":
     email = sys.stdin.readline().strip()
     password = sys.stdin.readline().strip()
     id = int(sys.stdin.readline().strip())
-    #print(sys.argv[1],sys.argv[2],sys.argv[3])
+    print("STARTED SESSION")
     startPolling()

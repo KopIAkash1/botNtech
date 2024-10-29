@@ -70,7 +70,7 @@ def start_message(message):
     else:
         bot.send_message(message.chat.id, "Список команд /help")
 def start_process(email, password, id):
-    process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, start_new_session=True)
+    process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT, start_new_session=True)
     process.stdin.write(f"{email}\n{password}\n{str(id)}\n".encode())
     process.stdin.close()
     return process
