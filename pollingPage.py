@@ -41,7 +41,7 @@ def startPolling():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_service = Service(executable_path="./chromedriver")
+    chrome_service = Service(executable_path="./chromedriver.exe")
     driver = webdriver.Chrome(service=chrome_service , options=chrome_options)
     print("DRIVER STARTED")
     auth(driver)
