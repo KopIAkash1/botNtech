@@ -44,7 +44,6 @@ def getPage(driver, settings):
     driver.get(url)
     time.sleep(5)
     checkError = driver.find_elements(By.CLASS_NAME, 'error__f068')
-    #print(checkError)
     if(checkError == []):
         if not settings.full_message:
             bot.send_message(id, "🟢Новый тикет🟢")
@@ -57,8 +56,6 @@ def getPage(driver, settings):
                 \n{ticket.url}'''
         bot.send_message(id, msg)
         return
-    #print("No new tickets at " + str(time.strftime("%H:%M:%S", time.localtime())))
-    #bot.send_message(1447605962, "Новый тикет НЕ пришел")
 
 def get_ticket_info(driver):
     ticket_div = driver.find_element(By.CLASS_NAME, 'summary__b71b')

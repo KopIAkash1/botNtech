@@ -8,6 +8,8 @@ bot = telebot.TeleBot(config.api)
 user_procces = dict()
 config_dir = os.path.join("configs")
 
+
+params = ["id","full_message"]
 ################ MAIN COMMANDS ################
 
 @bot.message_handler(commands=['start'])
@@ -28,6 +30,8 @@ def start_polling(message):
         bot.send_message(message.chat.id, "Данные введены не верно")
         return
     pid = start_process(email, password, id)
+    if pid == None:
+        return
     user_procces.update({id: pid})
     bot.reply_to(message, f"Запущен! Пид: {str(pid.pid)}. Попытка авторизации.")
 
@@ -67,7 +71,7 @@ def get_all_status(message):
 def config_polling(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = types.KeyboardButton("Проверить текущий конфиг")
-    item2 = types.KeyboardButton("Создать конфиг")
+    item2 = types.KeyboardButton("Создать/пересоздать конфиг")
     item3 = types.KeyboardButton("Изменить текущий конфиг")
     markup.add(item1, item2, item3)
     bot.send_message(message.chat.id, "Выберите необходимый вариант", reply_markup=markup)
@@ -113,6 +117,20 @@ def info_config(message):
                          \nПринимает значения: \n - True : вывод номера, названия, содержания и ссылки на тикет \
                          \n - False : вывод только сообщения о новом тикете''')
 
+################ CHECK CONFIG #################
+def check_config(id):
+    config_path = f"{config_dir}/{id}_config.yaml"
+    try:
+        file = open(config_path,"r")
+    except:
+        return False
+    text = file.read()
+    file.close()
+    for param in params:
+        if not param in text:
+            return False
+    return True
+
 ################## ALL OTHER ##################
 @bot.message_handler(func=lambda message: True)
 def start_message(message):
@@ -132,17 +150,14 @@ def start_message(message):
             msg += f"{param} - {params.get(param)}"
         bot.send_message(message.chat.id, msg)
         file.close()
-    elif (message.text == "Создать конфиг"):
-        if not (os.path.exists(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml")):
-            file = open(f"{str(config_dir)}/{str(message.chat.id)}_config.yaml", "w")
-            # PLACE FOR NEW PARAMS
-            file.write(f"id: {message.chat.id}\n")
-            file.write(f"full_message: {True}\n")
-            # END PARAMS
-            file.close()
-            bot.send_message(message.chat.id, "Файл конфигурации создан")
-        else:
-            bot.send_message(message.chat.id, "Файл конфигурации уже создан")
+    elif (message.text == "Создать/пересоздать конфиг"):
+        file = open(f"{str(config_dir)}/{str(message.chat.id)}_config.yaml", "w")
+        # PLACE FOR NEW PARAMS
+        file.write(f"id: {message.chat.id}\n")
+        file.write(f"full_message: {True}\n")
+        # END PARAMS
+        file.close()
+        bot.send_message(message.chat.id, "Файл конфигурации создан")
     elif (message.text == "Изменить текущий конфиг"):
         msg = '''Что бы узнать подробнее о параметрах в конфиге используй команду /config_info. \
                 \nСинтаксис: /config_info param(full_message, etc)\
@@ -153,11 +168,15 @@ def start_message(message):
         bot.send_message(message.chat.id, "Список команд /help")
 
 def start_process(email, password, id):
+    if not check_config(id):
+        bot.send_message(id, "Конфиграционный файл некорректный или отсуствует, необходимо его пересоздать")
+        return None
     process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
     process.stdin.write(f"{email}\n{password}\n{str(id)}\n{str(config_dir)}/{str(id)}_config.yaml".encode())
     process.stdin.close()
     return process
+
 def replace_line_in_file(file_path, old_line, new_line):
   try:
     with open(file_path, 'r') as f:
