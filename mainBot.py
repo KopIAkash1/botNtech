@@ -6,6 +6,7 @@ import config
 
 bot = telebot.TeleBot(config.api)
 user_procces = dict()
+config_dir = os.path.join("configs")
 
 
 @bot.message_handler(commands=['start'])
@@ -65,7 +66,7 @@ def get_all_status(message):
 def config_polling(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = types.KeyboardButton("Проверить текущий конфиг")
-    item2 = types.KeyboardButton("Изменить/создать текущий конфиг")
+    item2 = types.KeyboardButton("Создать конфиг")
     markup.add(item1, item2)
     bot.send_message(message.chat.id, "Выберите необходимый вариант", reply_markup=markup)
 
@@ -82,11 +83,11 @@ def help(message):
 @bot.message_handler(func=lambda message: True)
 def start_message(message):
     if (message.text == "Проверить текущий конфиг"):
-        if not (os.path.exists(str(message.chat.id) + "_config.yaml")):
+        if not (os.path.exists(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml")):
             bot.send_message(message.chat.id, "Конфигурации для текущего пользователя не существует")
             return
         params = dict()
-        file = open(str(message.chat.id) + "_config.yaml", "r")
+        file = open(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "r")
         for line in file:
             line.replace(" ", "")
             param = line.split(":")[0]
@@ -97,9 +98,9 @@ def start_message(message):
             msg += f"\n{param} - {params.get(param)}"
         bot.send_message(message.chat.id, msg)
         file.close()
-    elif (message.text == "Создать текущий конфиг"):
-        if not (os.path.exists(str(message.chat.id) + "_config.yaml")):
-            file = open(f"{str(message.chat.id)}_config.yaml", "w")
+    elif (message.text == "Создать конфиг"):
+        if not (os.path.exists(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml")):
+            file = open(f"{str(config_dir)}/{str(message.chat.id)}_config.yaml", "w")
             # Если файла вообще нет его надо создать
             file.write(f"id:{message.chat.id}\n")
             # PLACE FOR NEW PARAMS
