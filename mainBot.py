@@ -46,6 +46,19 @@ def kill_polling(message):
     bot.reply_to(message, "Проверка остановлена")
     user_procces.pop(message.chat.id)
 
+@bot.message_handler(commands=["kill_session"])
+def kill_admin(message):
+    if message.chat.id != 1447605962:
+        bot.send_message(message.chat.id, "У вас нет прав на использование этой команды")
+        return
+    try:
+        chat = str(message.text).split(" ")[1]
+    except:
+        bot.send_message(message.chat.id, "Некорректный ввод чата")
+    proccess = user_procces.get(int(chat))
+    proccess.terminate()
+    user_procces.pop(int(chat))
+    bot.send_message(message.chat.id, f"Пулл сессия по {chat} удалена")
 
 @bot.message_handler(commands=["status"])
 def get_status(message):
