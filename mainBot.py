@@ -8,6 +8,7 @@ bot = telebot.TeleBot(config.api)
 user_procces = dict()
 config_dir = os.path.join("configs")
 
+################ MAIN COMMANDS ################
 
 @bot.message_handler(commands=['start'])
 def start_polling(message):
@@ -67,7 +68,8 @@ def config_polling(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
     item1 = types.KeyboardButton("Проверить текущий конфиг")
     item2 = types.KeyboardButton("Создать конфиг")
-    markup.add(item1, item2)
+    item3 = types.KeyboardButton("Изменить текущий конфиг")
+    markup.add(item1, item2, item3)
     bot.send_message(message.chat.id, "Выберите необходимый вариант", reply_markup=markup)
 
 
@@ -79,7 +81,39 @@ def help(message):
                      проверке\n/status_all - получить данные всех проверках бота\n/help - сводка доступных комманд \
                      \n/config - раздел конфигурации вашего экземпляра\n''')
 
+############### CHANGE CONFIG #################
+@bot.message_handler(commands=["change_config"])
+def change_config(message):
+    if message.text == "/change_config":
+        bot.send_message(message.chat.id, "Не указан параметр для изменения")
+        return
+    try:
+        param = str(message.text).split(" ")[1]
+        value = str(message.text).split(" ")[2]
+    except:
+        bot.send_message(message.chat.id, "Данные для изменения введены не корректно")
+        return 
+    #PARAMS
+    if param == "full_message":
+        if value == "True":
+            replace_line_in_file(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "full_message: False", "full_message: True")
+        elif value == "False":
+            replace_line_in_file(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "full_message: True", "full_message: False")
+        else:
+            bot.send_message(message.chat.id, f"Неверное значение для замены")
+        bot.send_message(message.chat.id, f"Значение изменено на {value}")
+################ INFO CONFIG ##################
+@bot.message_handler(commands=["config_info"])
+def info_config(message):
+    if message.text == "/config_info":
+        bot.send_message(message.chat.id, "Не указан параметр для информирования")
+        return
+    elif str(message.text).split( )[1] == "full_message":
+        bot.send_message(message.chat.id, '''Параметр отвечает за отправку полной информации в уведомлении о том, что пришел новый тикет. \
+                         \nПринимает значения: \n - True : вывод номера, названия, содержания и ссылки на тикет \
+                         \n - False : вывод только сообщения о новом тикете''')
 
+################## ALL OTHER ##################
 @bot.message_handler(func=lambda message: True)
 def start_message(message):
     if (message.text == "Проверить текущий конфиг"):
@@ -91,34 +125,58 @@ def start_message(message):
         for line in file:
             line.replace(" ", "")
             param = line.split(":")[0]
-            value = str(line.split(":")[1][:-2])
+            value = str(line.split(":")[1])
             params.update({param: value})
-        msg = "Конфигурация для текущего пользователя"
+        msg = "Конфигурация для текущего пользователя\n"
         for param in params:
-            msg += f"\n{param} - {params.get(param)}"
+            msg += f"{param} - {params.get(param)}"
         bot.send_message(message.chat.id, msg)
         file.close()
     elif (message.text == "Создать конфиг"):
         if not (os.path.exists(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml")):
             file = open(f"{str(config_dir)}/{str(message.chat.id)}_config.yaml", "w")
-            # Если файла вообще нет его надо создать
-            file.write(f"id:{message.chat.id}\n")
             # PLACE FOR NEW PARAMS
+            file.write(f"id: {message.chat.id}\n")
+            file.write(f"full_message: {True}\n")
+            # END PARAMS
             file.close()
             bot.send_message(message.chat.id, "Файл конфигурации создан")
         else:
             bot.send_message(message.chat.id, "Файл конфигурации уже создан")
+    elif (message.text == "Изменить текущий конфиг"):
+        msg = '''Что бы узнать подробнее о параметрах в конфиге используй команду /config_info. \
+                \nСинтаксис: /config_info param(full_message, etc)\
+                \nДля изменения значений параметров конфига используй команду /change_config \
+                \nСинтаксис: /change_config param(full_message, etc) value(True, False, 5, etc)'''
+        bot.send_message(message.chat.id, msg)
     else:
         bot.send_message(message.chat.id, "Список команд /help")
-
 
 def start_process(email, password, id):
     process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
-    process.stdin.write(f"{email}\n{password}\n{str(id)}\n".encode())
+    process.stdin.write(f"{email}\n{password}\n{str(id)}\n{str(config_dir)}/{str(id)}_config.yaml".encode())
     process.stdin.close()
     return process
+def replace_line_in_file(file_path, old_line, new_line):
+  try:
+    with open(file_path, 'r') as f:
+      lines = f.readlines()
+    if new_line in lines:
+        return
+    with open(file_path, 'w') as f:
+      for line in lines:
+        if line.strip() == old_line.strip():
+          f.write(new_line + '\n')
+        else:
+          f.write(line)
 
+    print(f"Строка '{old_line}' успешно заменена на '{new_line}' в файле '{file_path}'")
+
+  except FileNotFoundError:
+    print(f"Файл '{file_path}' не найден.")
+  except Exception as e:
+    print(f"Ошибка при замене строки: {e}")
 
 if __name__ == "__main__":
     bot.polling()
