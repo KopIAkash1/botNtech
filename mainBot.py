@@ -92,13 +92,12 @@ def start_message(message):
             param = line.split(":")[0]
             value = str(line.split(":")[1][:-2])
             params.update({param: value})
-            print(params)
         msg = "Конфигурация для текущего пользователя"
         for param in params:
             msg += f"\n{param} - {params.get(param)}"
         bot.send_message(message.chat.id, msg)
         file.close()
-    elif (message.text == "Изменить/создать текущий конфиг"):
+    elif (message.text == "Создать текущий конфиг"):
         if not (os.path.exists(str(message.chat.id) + "_config.yaml")):
             file = open(f"{str(message.chat.id)}_config.yaml", "w")
             # Если файла вообще нет его надо создать
@@ -106,12 +105,14 @@ def start_message(message):
             # PLACE FOR NEW PARAMS
             file.close()
             bot.send_message(message.chat.id, "Файл конфигурации создан")
+        else:
+            bot.send_message(message.chat.id, "Файл конфигурации уже создан")
     else:
         bot.send_message(message.chat.id, "Список команд /help")
 
 
 def start_process(email, password, id):
-    process = subprocess.Popen(["py", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
+    process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
     process.stdin.write(f"{email}\n{password}\n{str(id)}\n".encode())
     process.stdin.close()
