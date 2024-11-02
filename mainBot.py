@@ -119,6 +119,21 @@ def change_config(message):
         else:
             bot.send_message(message.chat.id, f"Неверное значение для замены")
         bot.send_message(message.chat.id, f"Значение изменено на {value}")
+    if param == "no_reply":
+        if value == "True":
+            replace_line_in_file(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "no_reply: False", "no_reply: True")
+        elif value == "False":
+            replace_line_in_file(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "no_reply: True", "no_reply: False")
+        else:
+            bot.send_message(message.chat.id, f"Неверное значение для замены")
+        bot.send_message(message.chat.id, f"Значение изменено на {value}")
+    if param == "reply_time":
+        if value.isdigit():
+            replace_line_in_file(str(config_dir) + "/" + str(message.chat.id) + "_config.yaml", "reply_time: ", f"reply_time: {value}")
+        else: 
+            bot.send_message(message.chat.id, f"Значение {value} для данного параметра не корректно")
+            return
+        bot.send_message(message.chat.id, f"Значение изменено на {value}")
 ################ INFO CONFIG ##################
 @bot.message_handler(commands=["config_info"])
 def info_config(message):
@@ -168,6 +183,8 @@ def start_message(message):
         # PLACE FOR NEW PARAMS
         file.write(f"id: {message.chat.id}\n")
         file.write(f"full_message: {True}\n")
+        file.write(f"no_reply: {False}\n")
+        file.write(f"reply_time: {5}")
         # END PARAMS
         file.close()
         bot.send_message(message.chat.id, "Файл конфигурации создан")
@@ -179,16 +196,6 @@ def start_message(message):
         bot.send_message(message.chat.id, msg)
     else:
         bot.send_message(message.chat.id, "Список команд /help")
-
-def start_process_old(email, password, id):
-    if not check_config(id):
-        bot.send_message(id, "Конфиграционный файл некорректный или отсуствует, необходимо его пересоздать")
-        return None
-    process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
-                               start_new_session=True)
-    process.stdin.write(f"{email}\n{password}\n{str(id)}\n{str(config_dir)}/{str(id)}_config.yaml".encode())
-    process.stdin.close()
-    return process
 
 def start_process(id):
     if not check_config(id):
@@ -208,7 +215,7 @@ def replace_line_in_file(file_path, old_line, new_line):
         return
     with open(file_path, 'w') as f:
       for line in lines:
-        if line.strip() == old_line.strip():
+        if line.split(" ")[0] == old_line.split(" ")[0]:
           f.write(new_line + '\n')
         else:
           f.write(line)
