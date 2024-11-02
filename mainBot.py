@@ -16,7 +16,7 @@ params = ["id","full_message"]
 def start_polling(message):
     if ' group' in message.text and message.chat.id == 1447605962:
         pid = start_process(config.group_chat_pid)
-    else: pid = start_process(id)
+    else: pid = start_process(message.chat.id)
     user_procces.update({id: pid})
     bot.reply_to(message, f"Запущен! Пид: {str(pid.pid)}. Попытка авторизации.")
 
