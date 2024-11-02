@@ -14,24 +14,9 @@ params = ["id","full_message"]
 
 @bot.message_handler(commands=['start'])
 def start_polling(message):
-    if (message.text == "/start"):
-        bot.send_message(message.chat.id,
-                         "Для запуска проверки входящих тикетов напиши: /start a.ivanov@ntechlab.com password")
-        return
-    if message.chat.id in user_procces:
-        bot.send_message(message.chat.id, "Для вас уже запущена одна проверка")
-        return
-    bot.reply_to(message, "В обработке")
-    try:
-        email = str(message.text).split(" ")[1]
-        password = str(message.text).split(" ")[2]
-        id = message.chat.id
-    except:
-        bot.send_message(message.chat.id, "Данные введены не верно")
-        return
-    pid = start_process(id)
-    if pid == None:
-        return
+    if ' group' in message.text and message.chat.id == 1447605962:
+        pid = start_process(config.group_chat_pid)
+    else: pid = start_process(id)
     user_procces.update({id: pid})
     bot.reply_to(message, f"Запущен! Пид: {str(pid.pid)}. Попытка авторизации.")
 
