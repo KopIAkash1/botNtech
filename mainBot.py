@@ -29,7 +29,7 @@ def start_polling(message):
     except:
         bot.send_message(message.chat.id, "Данные введены не верно")
         return
-    pid = start_process(email, password, id)
+    pid = start_process(id)
     if pid == None:
         return
     user_procces.update({id: pid})
@@ -180,13 +180,23 @@ def start_message(message):
     else:
         bot.send_message(message.chat.id, "Список команд /help")
 
-def start_process(email, password, id):
+def start_process_old(email, password, id):
     if not check_config(id):
         bot.send_message(id, "Конфиграционный файл некорректный или отсуствует, необходимо его пересоздать")
         return None
     process = subprocess.Popen(["python3", "pollingPage.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
     process.stdin.write(f"{email}\n{password}\n{str(id)}\n{str(config_dir)}/{str(id)}_config.yaml".encode())
+    process.stdin.close()
+    return process
+
+def start_process(id):
+    if not check_config(id):
+        bot.send_message(id, "Конфиграционный файл некорректный или отсуствует, необходимо его пересоздать")
+        return None
+    process = subprocess.Popen(["python3", "gp-api.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
+                               start_new_session=True)
+    process.stdin.write(f"{str(config_dir)}/{str(id)}_config.yaml".encode())
     process.stdin.close()
     return process
 
