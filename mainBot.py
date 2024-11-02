@@ -168,8 +168,8 @@ def start_message(message):
         # PLACE FOR NEW PARAMS
         file.write(f"id: {message.chat.id}\n")
         file.write(f"full_message: {True}\n")
-        file.write(f"no_reply: {False}\n")
-        file.write(f"reply_time: {5}")
+        file.write(f"no_reply: {True}\n")
+        file.write(f"reply_time: {60}")
         # END PARAMS
         file.close()
         bot.send_message(message.chat.id, "Файл конфигурации создан")
