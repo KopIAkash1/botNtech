@@ -21,6 +21,7 @@ class Settings():
         with open(config_name) as f:
             params = yaml.safe_load(f)
         self.id = params['id'] # user's chat id
+        self.thread = params['thread'] # user's thread id
         self.full_message = params['full_message'] # full message about ticket
         self.no_reply = params['no_reply'] # replay message on same ticket on/off option
         self.reply_time = params['reply_time'] # reply message time
@@ -64,8 +65,8 @@ def polling(settings):
                 send_message("🟢Новый тикет🟢",settings)
         time.sleep(settings.reply_time)
 
-def send_message(msg, settings):#
-    bot.send_message(settings.id, msg)
+def send_message(msg, settings):
+    bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=None)
 
 if __name__ == '__main__':
     settings = Settings(sys.stdin.readline().strip())
