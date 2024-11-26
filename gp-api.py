@@ -27,13 +27,13 @@ class Settings():
         self.reply_time = params['reply_time'] # reply message time
 
 def get_page():
-    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,description&query=project:{Support | Служба поддержки}%20 Assignee: Unassigned State: -Closed&sort=state'
+    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,description&query=project:{Support | Служба поддержки}%20 Assignee: Unassigned State: -Closed, -{Waiting for L2}'
     url_headers = {
         'Accept': 'application/json',
         f'Authorization': f'Bearer {config.token}',
         'Content-Type': 'application/json'
     }
-    request = requests.get(url, headers=url_headers)
+    request = requests.get(url, headers=url_headers, verify=False)
     return request.json()
 
 
@@ -56,19 +56,22 @@ def polling(settings):
                 else: continue
             #full_message
             if settings.full_message:
+                if len(ticket.context) > 4095: ticket.context = ticket.context[:2000] + "..."
                 send_message(f'''🟢Новый тикет:🟢 \
                 \n{ticket.id}\
                 \nНазвание: {ticket.title}\
-                \nСодержание: {ticket.context}\
                 \n{ticket.url}''',settings)
             else:
                 send_message("🟢Новый тикет🟢",settings)
         time.sleep(settings.reply_time)
 
 def send_message(msg, settings):
-    bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=None)
+    bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=settings.thread)
 
 if __name__ == '__main__':
-    settings = Settings(sys.stdin.readline().strip())
+    if sys.argv[1] != "-docker":
+        settings = Settings(sys.stdin.readline().stip())
+    else:
+        settings = Settings("/opt/bot/configs/-1001570787209_config.yaml")
     polling(settings)
     print(1)

@@ -192,7 +192,7 @@ def create_config(message):
     file = open(f"{str(config_dir)}/{str(message.chat.id)}_config.yaml", "w")
     # PLACE FOR NEW PARAMS
     file.write(f"id: {message.chat.id}\n")
-    file.write(f"thread: {message.message_thread_id if not message.message_thread_id else null}\n")
+    file.write(f"thread: {message.message_thread_id if message.message_thread_id else 'null'}\n")
     file.write(f"full_message: {True}\n")
     file.write(f"no_reply: {True}\n")
     file.write(f"reply_time: {60}")
@@ -209,7 +209,7 @@ def start_process(id):
     if not check_config(id):
         bot.send_message(id, "Конфиграционный файл некорректный или отсуствует, необходимо его пересоздать")
         return None
-    process = subprocess.Popen(["py", "gp-api.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
+    process = subprocess.Popen(["python3", "gp-api.py"], stdin=subprocess.PIPE, stderr=subprocess.STDOUT,
                                start_new_session=True)
     process.stdin.write(f"{str(config_dir)}/{str(id)}_config.yaml".encode())
     process.stdin.close()
