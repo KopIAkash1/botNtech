@@ -57,7 +57,7 @@ def polling(settings):
             #full_message
             if settings.full_message:
                 if len(ticket.context) > 4095: ticket.context = ticket.context[:2000] + "..."
-                send_message(f'''🟢Новый тикет:🟢 \
+                send_message(f'''🟢Новый тикет🟢 \
                 \n{ticket.id}\
                 \nНазвание: {ticket.title}\
                 \n{ticket.url}''',settings)
