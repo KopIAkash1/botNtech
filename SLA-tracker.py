@@ -6,23 +6,7 @@ from datetime import datetime
 
 bot = telebot.TeleBot(config.api)
 
-user_and_next_user = {
-     #первый из передачи после дневной, второй после ночной
-    'a.aleksandrov' : {'i.frolov@ntechlab.com', 'a.tolstopyat@ntechlab.com'},
-    'a.tolstopyat@ntechlab.com' : {'d.kalinin@ntechlab.com', 'i.frolov@ntechlab.com'},
-    'a.provotorov@ntechlab.com' : {'a.tolstopyat@ntechlab.com', 'a.aleksandrov'},
-    'd.kalinin@ntechlab.com' : {'a.aleksandrov', 'a.provotorov@ntechlab.com'},
-    'i.frolov@ntechlab.com' : {'a.provotorov@ntechlab.com', 'd.kalinin@ntechlab.com'}
-}
-
-user_tg = {
-    'a.aleksandrov' : '@Shiretomi',
-    'a.tolstopyat@ntechlab.com' : '@Kopi150',
-    'a.provotorov@ntechlab.com' : '@AlexeyPR8',
-    'd.kalinin@ntechlab.com' : '@difoxevith',
-    'i.frolov@ntechlab.com' : '@Rusha1227'
-}
-current_user = list(user_and_next_user.keys())[config.SLA_shift - 1]
+current_user = list(config.user_and_next_user.keys())[config.SLA_shift - 1]
 switch_completed = False
 known_tickets = []
 
@@ -33,7 +17,7 @@ class Ticket:
         self.sla_state = current_time_till_sla > datetime.timestamp(datetime.now())
 
 def get_current_tasks():
-    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=project:{Support | Служба поддержки}%20 Assignee:' + current_user + ' State: -Closed, -{Waiting for L2}, -{Waiting for delivery}, -{Waiting for developer}, -{On hold}' 
+    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=State:%20%7BWaiting%20for%20support%7D%20,%20%7BWaiting%20for%20customer%7D%20%20State:%20-Closed%20Project:%20%7BSupport%20%7C%20Служба%20поддержки%7D%20' 
     url_headers = {
         'Accept': 'application/json',
         f'Authorization': f'Bearer {config.token}',
@@ -62,7 +46,7 @@ def send_SLA_break_message(tickets):
                     \n{ticket.id}\
                     \nSummary: {ticket.summary}\
                     \nhttps://tracker.ntechlab.com/tickets/{ticket.id}\
-                    \n{user_tg[current_user]}'''
+                    \n{config.user_tg[current_user]}'''
                 known_tickets_file.write(f"{ticket.id}\n")
                 bot.send_message(chat_id=1447605962, text = msg, reply_to_message_id=0)
         known_tickets_file.close()
@@ -85,19 +69,11 @@ def polling():
     global current_user
     global switch_completed
     while True:
-        if datetime.now().hour == 21 and not switch_completed:
-            switch_user(to_night=True)
-            switch_completed = True
-        elif datetime.now().hour == 9 and not switch_completed:
-            switch_user(to_night=False)
-            switch_completed = True
-        elif datetime.now().hour != 21 and datetime.now().hour != 9:
-            switch_completed = False
         get_known_tickets()
         response = get_current_tasks()
         tickets = fromate_to_ticket(response)
         send_SLA_break_message(tickets)
-        time.sleep(300)
+        time.sleep(600)
 
 
 if __name__ == "__main__":
