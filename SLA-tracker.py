@@ -3,18 +3,38 @@ import requests
 import time
 import telebot
 from datetime import datetime
+import pandas as pd
+import logging as log
 
 bot = telebot.TeleBot(config.api)
-
-current_user = list(config.user_and_next_user.keys())[config.SLA_shift - 1]
 switch_completed = False
 known_tickets = []
+current_user = ""
 
 class Ticket:
     def __init__(self, id, summary, current_time_till_sla):
         self.id = id
         self.summary = summary
         self.sla_state = current_time_till_sla > datetime.timestamp(datetime.now())
+
+
+def read_schedule():
+    table = pd.read_excel('./schedule.xlsx', header=None)
+    current_day = str(datetime.now().date())
+    current_hour = datetime.now().hour
+    column = 3
+    while True:
+        value = str(table.iloc[0,column]).split(" ")[0]
+        column += 1
+        if value == current_day:
+            for i in range(2,6):
+                value = str(table.iloc[i, column])
+                if value == "9 - 21" and (current_hour >= 9 and current_hour <= 21):
+                    current_user = table.iloc[i-1,0]
+                    return config.name_user[current_user]
+                elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
+                    current_hour = table.iloc[i-1,0]
+                    return config.name_user[current_user]
 
 def get_current_tasks():
     url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=State:%20%7BWaiting%20for%20support%7D%20,%20%7BWaiting%20for%20customer%7D%20%20State:%20-Closed%20Project:%20%7BSupport%20%7C%20Служба%20поддержки%7D%20' 
@@ -77,5 +97,6 @@ def polling():
 
 
 if __name__ == "__main__":
+    current_user = read_schedule()
     print(f"[DEBUG] | Current user : {current_user}")
     polling()
