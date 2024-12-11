@@ -4,3 +4,5 @@ __pycache__/
 chromedriver*
 .idea
 sla_broken_tickets.txt
+schedule.xlsx
+req.txt
