@@ -22,7 +22,7 @@ def is_tagging(message):
 def check_author_and_format(message):
     return is_tagging(message) and message.from_user.username in config.users
 
-@bot.message_handler(commands=['get_channel_id'], func=lambda message: check_author_and_format(message))
+@bot.message_handler(commands=['get_channel_id_for_chat'], func=lambda message: check_author_and_format(message))
 def get_channel_id(message):
     bot.send_message(message.chat.id, f"ID вашего чата: {message.chat.id}",reply_to_message_id=message.message_id)
     bot.send_message(message.chat.id, f"Thread вашего чата: {message.message_thread_id}",reply_to_message_id=message.message_id)

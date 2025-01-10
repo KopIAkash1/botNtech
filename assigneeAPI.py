@@ -24,14 +24,14 @@ def read_schedule():
         if value == current_day:
             for i in range(2,8):
                 value = str(table.iloc[i, column])
-                if value == "9 - 21" and (current_hour >= 9 and current_hour < 21):
+                if value == "9 - 21" and (current_hour > 9 and current_hour <= 21):
                     current_user = table.iloc[i,0]
                     for j in range(i,8):
                         value = str(table.iloc[j, column])
                         if value == "21-9":
                             next_user = table.iloc[j,0]
                     return config.name_user[current_user], config.name_user[next_user]
-                elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
+                elif value == "21-9" and (current_hour > 21 or current_hour <= 9):
                     current_user = table.iloc[i,0]
                     for j in range(2,8):
                         value = str(table.iloc[j, column+1])
