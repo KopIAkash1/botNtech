@@ -1,7 +1,5 @@
-import telebot
 import requests
 import config
-import asyncio
 import pandas as pd
 from datetime import datetime as dt
 
@@ -84,10 +82,12 @@ def assigne_to_next(old_user_param : str = "",next_user_param : str = "") -> str
     current_user, next_user = read_schedule()
     if next_user_param != "":
         next_user = config.tg_user[next_user_param]
+    if old_user_param != "":
+        current_user = config.tg_user[old_user_param]
     print(f"DEBUT | From - {current_user}")
     print(f"DEBUG | Assignee to - {next_user}")
     tickets = get_tickets(current_user)
-    #send_assigne_to_request(tickets, next_user)
+    send_assigne_to_request(tickets, next_user)
     return config.user_tg[next_user]
 
 
