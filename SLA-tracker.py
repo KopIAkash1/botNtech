@@ -15,7 +15,8 @@ class Ticket:
     def __init__(self, id, summary, current_time_till_sla):
         self.id = id
         self.summary = summary
-        self.sla_state = current_time_till_sla > datetime.timestamp(datetime.now())
+        self.sla_time = datetime.fromtimestamp(current_time_till_sla / 1000)
+        self.sla_state = current_time_till_sla > datetime.timestamp(datetime.now()) * 1000
 
 
 def read_schedule():
@@ -52,6 +53,9 @@ def fromate_to_ticket(response):
         id = item.get('idReadable')
         summary = item.get('summary')
         SLA_time = item.get("fields", [{}])[0].get("value", None)
+        #try:
+        #    print(f"{id} - {SLA_time} - {SLA_time > datetime.timestamp(datetime.now())} - {datetime.timestamp(datetime.now())}")
+        #except Exception as e: print(e)
         if isinstance(SLA_time, int): tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
@@ -61,11 +65,12 @@ def send_SLA_break_message(tickets):
     with open('sla_broken_tickets.txt', 'a') as known_tickets_file:
         for ticket in tickets:
             if ticket.id in known_tickets: continue
-            elif (ticket.sla_state):
+            elif (ticket.sla_state == False):
                 msg = f'''🔴Истек срок решения🔴\
                     \n{ticket.id}\
-                    \nSummary: {ticket.summary}\
+                    \n{ticket.summary}\
                     \nhttps://tracker.ntechlab.com/tickets/{ticket.id}\
+                    \n{ticket.sla_time}\
                     \n{config.user_tg[current_user]}'''
                 known_tickets_file.write(f"{ticket.id}\n")
                 bot.send_message(chat_id=1447605962, text = msg, reply_to_message_id=0)

@@ -30,7 +30,7 @@ def read_schedule():
                     current_user = table.iloc[i,0]
                     for j in range(i,8):
                         value = str(table.iloc[j, column])
-                        if value == "9 - 21":
+                        if value == "21-9":
                             next_user = table.iloc[j,0]
                     return config.name_user[current_user], config.name_user[next_user]
                 elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
@@ -80,10 +80,10 @@ def send_assigne_to_request(json, next_user):
         }
         response = requests.post(request_url, json=data, headers=url_headers, verify=False)
 
-def assigne_to_next(next_user_param : str = ""):
+def assigne_to_next(old_user_param : str = "",next_user_param : str = "") -> str:
     current_user, next_user = read_schedule()
     if next_user_param != "":
-        next_user = next_user_param
+        next_user = config.tg_user[next_user_param]
     print(f"DEBUT | From - {current_user}")
     print(f"DEBUG | Assignee to - {next_user}")
     tickets = get_tickets(current_user)
