@@ -28,7 +28,7 @@ def read_schedule():
         value = str(table.iloc[0,column]).split(" ")[0]
         column += 1
         if value == current_day:
-            for i in range(2,6):
+            for i in range(2,8):
                 value = str(table.iloc[i, column])
                 if value == "9 - 21" and (current_hour >= 9 and current_hour <= 21):
                     current_user = table.iloc[i-1,0]
