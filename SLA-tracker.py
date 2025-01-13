@@ -39,7 +39,7 @@ def read_schedule():
                     return config.name_user[current_user]
 
 def get_current_tasks():
-    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=State:%20%7BWaiting%20for%20support%7D%20,%20%7BWaiting%20for%20customer%7D%20%20State:%20-Closed%20Project:%20%7BSupport%20%7C%20Служба%20поддержки%7D%20' 
+    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=State:%20%7BWaiting%20for%20support%7D%20State:%20-Closed%20Project:%20%7BSupport%20%7C%20Служба%20поддержки%7D%20' 
     url_headers = {
         'Accept': 'application/json',
         f'Authorization': f'Bearer {config.token}',
@@ -97,7 +97,7 @@ def polling():
         get_known_tickets()
         response = get_current_tasks()
         tickets = fromate_to_ticket(response)
-        send_SLA_break_message(tickets)
+        #send_SLA_break_message(tickets)
         time.sleep(600)
 
 
