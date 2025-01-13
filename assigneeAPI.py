@@ -26,15 +26,22 @@ def read_schedule():
                 value = str(table.iloc[i, column])
                 if value == "9 - 21" and (current_hour > 9 and current_hour <= 21):
                     current_user = table.iloc[i,0]
-                    for j in range(i,8):
+                    for j in range(2,8):
                         value = str(table.iloc[j, column])
                         if value == "21-9":
                             next_user = table.iloc[j,0]
                     return config.name_user[current_user], config.name_user[next_user]
-                elif value == "21-9" and (current_hour > 21 or current_hour <= 9):
-                    current_user = table.iloc[i,0]
+                elif value == "9 - 21" and current_hour <= 9:
+                    next_user = table.iloc[i, 0]
                     for j in range(2,8):
-                        value = str(table.iloc[j, column+1])
+                        value = str(table.iloc[j, column - 1])
+                        if value == "21-9":
+                            current_user = table.iloc[j, 0]
+                    return config.name_user[current_user], config.name_user[next_user]
+                elif value == "21-9" and current_hour > 21:
+                    current_user = table.iloc[i, 0]
+                    for j in range(2,8):
+                        value = str(table.iloc[j,column + 1])
                         if value == "9 - 21":
                             next_user = table.iloc[j,0]
                     return config.name_user[current_user], config.name_user[next_user]
@@ -87,7 +94,7 @@ def assigne_to_next(old_user_param : str = "",next_user_param : str = "") -> str
     print(f"DEBUT | From - {current_user}")
     print(f"DEBUG | Assignee to - {next_user}")
     tickets = get_tickets(current_user)
-    send_assigne_to_request(tickets, next_user)
+    #send_assigne_to_request(tickets, next_user)
     return config.user_tg[next_user]
 
 
