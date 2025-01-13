@@ -1,16 +1,23 @@
 import telebot
 import config
 import assigneeAPI
+from threading import Thread
+from telebot import types
+import datetime
+import time
 
 bot = telebot.TeleBot(config.api)
 
 @bot.message_handler(commands=["pong"])
-def pong(message):
-    bot.reply_to(message, "PING")
+def assignee_time_message():
+    markup = types.InlineKeyboardMarkup()
+    button1 = types.InlineKeyboardButton("Переназначение по расписанию", url="https://t.me/TicketTrackerNTECHbot?start=assignee")
+    markup.add(button1)
+    bot.send_message(chat_id=config.group_chat_pid, text="Переназначение", reply_markup=markup, reply_to_message_id=172548)
 
 @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
 def assigne_to_user(message):
-    tag = ""
+    message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
         if message.text == "/assignee":
@@ -38,6 +45,23 @@ def check_author_and_format(message):
 def get_channel_id(message):
     bot.send_message(message.chat.id, f"ID чата: {message.chat.id}\nThread чата: {message.message_thread_id}",reply_to_message_id=message.message_id)
 
+def schedule_message():
+    message_sended = False
+    while True:
+        if (datetime.datetime.now().hour == 9 or datetime.datetime.now().hour == 21) and message_sended != True:
+            assignee_time_message()
+            message_sended = True
+        time.sleep(30)
+
+
+@bot.message_handler(commands=["start"])
+def start(message):
+    if "assignee" in message.text:
+        assigne_to_user(message)
+
+
 
 if __name__ == "__main__":
+    schedule_thread = Thread(target=schedule_message)
+    schedule_thread.start()
     bot.polling()
