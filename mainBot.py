@@ -10,10 +10,15 @@ bot = telebot.TeleBot(config.api)
 
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
+    current_user, next_user = assigneeAPI.read_schedule()
+    msg = f'''🎉Переназначение🎉\
+    \nТекущий пользователь: {current_user}\
+    \nСледующий пользователь: {next_user}
+    '''
     markup = types.InlineKeyboardMarkup()
-    button1 = types.InlineKeyboardButton("Переназначение по расписанию", url="https://t.me/TicketTrackerNTECHbot?start=assignee")
+    button1 = types.InlineKeyboardButton("Переназначить", url="https://t.me/TicketTrackerNTECHbot?start=assignee")
     markup.add(button1)
-    bot.send_message(chat_id=config.group_chat_pid, text="Переназначение", reply_markup=markup, reply_to_message_id=172548)
+    bot.send_message(chat_id=config.group_chat_pid, text=msg, reply_markup=markup, reply_to_message_id=172548)
 
 @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
 def assigne_to_user(message):
