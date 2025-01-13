@@ -25,16 +25,17 @@ def read_schedule():
     current_hour = datetime.now().hour
     column = 3
     while True:
-        value = str(table.iloc[0,column]).split(" ")[0]
         column += 1
+        value = str(table.iloc[0,column]).split(" ")[0]
         if value == current_day:
             for i in range(2,8):
                 value = str(table.iloc[i, column])
-                if value == "9 - 21" and (current_hour >= 9 and current_hour <= 21):
-                    current_user = table.iloc[i-1,0]
+                print(value)
+                if value == "9 - 21" and (current_hour >= 9 and current_hour < 21):
+                    current_user = table.iloc[i,0]
                     return config.name_user[current_user]
                 elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
-                    current_hour = table.iloc[i-1,0]
+                    current_hour = table.iloc[i,0]
                     return config.name_user[current_user]
 
 def get_current_tasks():
@@ -70,7 +71,6 @@ def send_SLA_break_message(tickets):
                     \n{ticket.id}\
                     \n{ticket.summary}\
                     \nhttps://tracker.ntechlab.com/tickets/{ticket.id}\
-                    \n{ticket.sla_time}\
                     \n{config.user_tg[current_user]}'''
                 known_tickets_file.write(f"{ticket.id}\n")
                 bot.send_message(chat_id=1447605962, text = msg, reply_to_message_id=0)
