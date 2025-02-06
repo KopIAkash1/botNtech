@@ -6,3 +6,4 @@ chromedriver*
 schedule.xlsx
 *.txt
 .~*
+venv

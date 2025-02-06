@@ -7,6 +7,7 @@ import datetime
 import time
 
 bot = telebot.TeleBot(config.api)
+assignee_from_group = False
 
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
@@ -27,7 +28,9 @@ def assigne_to_user(message):
         print(len(str(message.text).split(" ")))
         if message.text == "/assignee":
             name = assigneeAPI.assigne_to_next()
-            bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
+            if not(assignee_from_group):
+                bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
+                assignee_from_group = True
         elif len(message.text.split(" ")) == 2:
             next_user = message.text.split(" ")[1]
             name = assigneeAPI.assigne_to_next(next_user_param=next_user)
@@ -38,7 +41,6 @@ def assigne_to_user(message):
             name = assigneeAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
             bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}")
     except Exception as e: print(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
-    return
 
 def is_tagging(message):
     return f'@{bot.get_me().username}' in message.text
