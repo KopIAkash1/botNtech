@@ -26,7 +26,9 @@ def assigne_to_user(message):
     message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
-        if message.text == "/assignee":
+        current_user, next_user = assigneeAPI.read_schedule()
+        print(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user}")
+        if message.text == "/assignee" and f"@{message.from_user.username}" == config.user_tg[current_user]:
             name = assigneeAPI.assigne_to_next()
             if not(assignee_from_group):
                 bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
