@@ -23,16 +23,22 @@ def assignee_time_message():
 
 @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
 def assigne_to_user(message):
+    global assignee_from_group
     message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
         current_user, next_user = assigneeAPI.read_schedule()
-        print(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user}")
-        if message.text == "/assignee" and f"@{message.from_user.username}" == config.user_tg[current_user]:
-            name = assigneeAPI.assigne_to_next()
-            if not(assignee_from_group):
-                bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
-                assignee_from_group = True
+        print(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user} and next user is {next_user}")
+        if message.text == "/assignee":
+            if f"@{message.from_user.username}" == config.user_tg[current_user] or f"@{message.from_user.username}" == config.user_tg[next_user]:
+                if not(assignee_from_group):
+                    name = assigneeAPI.assigne_to_next()
+                    bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
+                    assignee_from_group = True
+                else:
+                    print(f"Already assigned")
+            else:
+                print("User are not allowed to assignee")
         elif len(message.text.split(" ")) == 2:
             next_user = message.text.split(" ")[1]
             name = assigneeAPI.assigne_to_next(next_user_param=next_user)
