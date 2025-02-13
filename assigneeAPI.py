@@ -55,7 +55,7 @@ def fromate_to_ticket(response):
     return tickets
 
 def get_tickets(name):
-    url_test = "https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,description&query=Assignee: v.golovenko@ntechlab.com State: -Closed"
+    #url_test = "https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,description&query=Assignee: v.golovenko@ntechlab.com State: -Closed"
     url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,description&query=Assignee: {name} State: -Closed'
     print(f"[DEBUG] making request to get tickets: {url}")
     url_headers = {
@@ -63,7 +63,7 @@ def get_tickets(name):
         f'Authorization': f'Bearer {config.token}',
         'Content-Type': 'application/json'
     }
-    request = requests.get(url_test, headers=url_headers, verify=False)
+    request = requests.get(url=url, headers=url_headers, verify=False)
     #print(request.text)
     return request.json()
 
@@ -71,11 +71,9 @@ def get_tickets(name):
 
 def send_assigne_to_request(json, next_user):
     tickets = fromate_to_ticket(json)
-    print(tickets)
+    print(f"Count of tikcets: {len(tickets)}")
     for ticket in tickets:
-        print(ticket.id)
         request_url = f"https://tracker.ntechlab.com/api/issues/{ticket.id}/fields/159-2506"
-        print(request_url)
         url_headers = {
             'Accept': 'application/json',
             f'Authorization': f'Bearer {config.token}',
@@ -87,7 +85,9 @@ def send_assigne_to_request(json, next_user):
             "ringId": f"{config.user_ring_id[next_user]}"
             }
         }
+        print(f"Trying send request to assignee on ticket: {ticket.id}")
         response = requests.post(request_url, json=data, headers=url_headers, verify=False)
+        print(f"Get result: {response.status_code, response.text}")
 
 def assigne_to_next(old_user_param : str = "",next_user_param : str = "") -> str:
     current_user, next_user = read_schedule()
