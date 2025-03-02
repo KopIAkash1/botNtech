@@ -84,4 +84,4 @@ def start(message):
 if __name__ == "__main__":
     schedule_thread = Thread(target=schedule_message)
     schedule_thread.start()
-    bot.polling()
+    bot.infinity_polling(timeout=10, long_polling_timeout=5)
