@@ -62,16 +62,19 @@ def polling(settings):
                 \nНазвание: {ticket.title}\
                 \n{ticket.url}''',settings)
             else:
-                send_message("🟢Новый тикет🟢",settings)
+                send_message("🟢Новый тикет🟢",settings, ticket)
         time.sleep(settings.reply_time)
 
-def send_message(msg, settings):
-    bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=settings.thread)
+def send_message(msg, settings, ticket):
+    markup = telebot.types.InlineKeyboardMarkup()
+    button1 = telebot.types.InlineKeyboardButton("Спам", url="https://t.me/TicketTrackerNTECHbot?start=spam" + ticket.id)
+    markup.add(button1)
+    bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=settings.thread, reply_markup=markup)
 
 if __name__ == '__main__':
     if sys.argv[1] != "-docker":
         settings = Settings(sys.stdin.readline().stip())
     else:
-        settings = Settings("/opt/bot/configs/-1001570787209_config.yaml")
+        settings = Settings("configs/1447605962.yaml")
     polling(settings)
     print(1)
