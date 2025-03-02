@@ -56,18 +56,17 @@ def polling(settings):
                 else: continue
             #full_message
             if settings.full_message:
-                if len(ticket.context) > 4095: ticket.context = ticket.context[:2000] + "..."
                 send_message(f'''🟢Новый тикет🟢 \
                 \n{ticket.id}\
                 \nНазвание: {ticket.title}\
-                \n{ticket.url}''',settings)
+                \n{ticket.url}''',settings, ticket)
             else:
                 send_message("🟢Новый тикет🟢",settings, ticket)
         time.sleep(settings.reply_time)
 
 def send_message(msg, settings, ticket):
     markup = telebot.types.InlineKeyboardMarkup()
-    button1 = telebot.types.InlineKeyboardButton("Спам", url="https://t.me/TicketTrackerNTECHbot?start=spam" + ticket.id)
+    button1 = telebot.types.InlineKeyboardButton("Спам", url="https://t.me/TicketTrackerNTECHbot?start=spam_" + ticket.id)
     markup.add(button1)
     bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=settings.thread, reply_markup=markup)
 
