@@ -63,7 +63,7 @@ def get_channel_id(message):
 def schedule_message():
     message_sended = False
     while True:
-        if (datetime.datetime.now().hour == 9 or datetime.datetime.now().hour == 21) and message_sended != True:
+        if (datetime.datetime.now().hour == 6 or datetime.datetime.now().hour == 18) and message_sended != True:
             assignee_time_message()
             message_sended = True
         time.sleep(30)
