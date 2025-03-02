@@ -75,6 +75,6 @@ if __name__ == '__main__':
     if sys.argv[1] != "-docker":
         settings = Settings(sys.stdin.readline().stip())
     else:
-        settings = Settings("configs/1447605962.yaml")
+        settings = Settings("/opt/bot/configs/-1001570787209_config.yaml")
     polling(settings)
     print(1)
