@@ -73,6 +73,11 @@ def schedule_message():
 def start(message):
     if "assignee" in message.text:
         assigne_to_user(message)
+    elif "spam" in message.text:
+        print("Ticket is spam")
+        ticket_id = message.text.split("_")[1]
+        assigneeAPI.spam_ticket(ticket_id)
+        bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
 
 
 
