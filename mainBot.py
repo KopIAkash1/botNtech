@@ -5,6 +5,7 @@ from threading import Thread
 from telebot import types
 import datetime
 import time
+import random 
 
 bot = telebot.TeleBot(config.api)
 assignee_from_group = False
@@ -79,7 +80,13 @@ def start(message):
         assigneeAPI.spam_ticket(ticket_id)
         bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
 
-
+@bot.message_handler(commands=["roulette"], func = lambda message: check_author_and_format(message))
+def roulette(message):
+    if "l1" in message.text:
+        person = config.users[random.randrange(0,4)]
+    else:
+        person = config.users[random.randrange(5,len(config.users))]
+    bot.send_message(message.chat.id, f"Победитель сегодняшней лотерии🎰\n@{person}!\nПоздравляем и/или сочувствуем🫡")
 
 if __name__ == "__main__":
     schedule_thread = Thread(target=schedule_message)
