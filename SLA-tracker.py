@@ -35,7 +35,7 @@ def read_schedule():
                     current_user = table.iloc[i,0]
                     return config.name_user[current_user]
                 elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
-                    current_hour = table.iloc[i,0]
+                    current_user = table.iloc[i,0]
                     return config.name_user[current_user]
 
 def get_current_tasks():
