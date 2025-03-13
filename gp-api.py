@@ -4,8 +4,10 @@ import yaml
 import sys
 import telebot
 import time
-
 import urllib3
+
+from loguru import logger
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 bot = telebot.TeleBot(config.api)
@@ -74,6 +76,7 @@ def send_message(msg, settings, ticket):
     bot.send_message(chat_id=settings.id, text=msg, reply_to_message_id=settings.thread, reply_markup=markup)
 
 if __name__ == '__main__':
+    logger.debug("Bot started")
     if sys.argv[1] != "-docker":
         settings = Settings(sys.stdin.readline().stip())
     else:
