@@ -1,11 +1,12 @@
 import telebot
 import config
 import assigneeAPI
-from threading import Thread
-from telebot import types
 import datetime
 import time
-import random 
+
+from threading import Thread
+from telebot import types
+from loguru import logger
 
 bot = telebot.TeleBot(config.api)
 assignee_from_group = False
@@ -25,6 +26,7 @@ def assignee_time_message():
 @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
 def assigne_to_user(message):
     global assignee_from_group
+    logger.debug(f"Started assignee func by {message.from_user.username}")
     message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
@@ -36,6 +38,7 @@ def assigne_to_user(message):
                     name = assigneeAPI.assigne_to_next()
                     bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
                     assignee_from_group = True
+                    logger.debug(f"Assignee from {current_user} to {next_user}")
                 else:
                     print(f"Already assigned")
             else:
@@ -64,7 +67,7 @@ def get_channel_id(message):
 def schedule_message():
     message_sended = False
     while True:
-        if (datetime.datetime.now().hour == 6 + config.timezone or datetime.datetime.now().hour == 18 + config.timezone) and message_sended != True:
+        if (datetime.datetime.now().hour == 9 or datetime.datetime.now().hour == 21) and message_sended != True:
             assignee_time_message()
             message_sended = True
         time.sleep(30)
@@ -74,21 +77,11 @@ def schedule_message():
 def start(message):
     if "assignee" in message.text:
         assigne_to_user(message)
-    elif "spam" in message.text:
-        print("Ticket is spam")
-        ticket_id = message.text.split("_")[1]
-        assigneeAPI.spam_ticket(ticket_id)
-        bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
 
-@bot.message_handler(commands=["roulette"], func = lambda message: check_author_and_format(message))
-def roulette(message):
-    if "l1" in message.text:
-        person = config.users[random.randrange(0,4)]
-    else:
-        person = config.users[random.randrange(5,len(config.users))]
-    bot.send_message(message.chat.id, f"Победитель сегодняшней лотерии🎰\n@{person}!\nПоздравляем и/или сочувствуем🫡")
+
 
 if __name__ == "__main__":
+    logger.debug("Bot started")
     schedule_thread = Thread(target=schedule_message)
     schedule_thread.start()
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    bot.polling()
