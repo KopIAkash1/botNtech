@@ -7,3 +7,5 @@ schedule.xlsx
 *.txt
 .~*
 venv
+*.json
+*.db
