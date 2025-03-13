@@ -5,6 +5,9 @@ import sys
 import telebot
 import time
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 bot = telebot.TeleBot(config.api)
 
 known_tickets = []
