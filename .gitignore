@@ -8,4 +8,4 @@ schedule.xlsx
 .~*
 venv
 *.json
-*.db
+*.db 
