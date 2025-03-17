@@ -109,9 +109,10 @@ def make_docs(message):
     params = message.text.split(" ")
     if len(params) == 1:
         markup = types.InlineKeyboardMarkup()
-        markup1 = types.InlineKeyboardButton("Контроль создания резервных копий (Видеодетектор)", callback_data="doc_type: 2")
-        markup2 = types.InlineKeyboardButton("Проверка срабатывания и уведомлений систем мониторинга", callback_data="doc_type: 1")
-        markup.add(markup1,markup2)
+        markup1 = types.InlineKeyboardButton("Управление объемом и размещением табличных пространств Баз данных", callback_data="doc_type: 3")
+        markup2 = types.InlineKeyboardButton("Контроль создания резервных копий (Видеодетектор)", callback_data="doc_type: 2")
+        markup3 = types.InlineKeyboardButton("Проверка срабатывания и уведомлений систем мониторинга", callback_data="doc_type: 1")
+        markup.add(markup1,markup2, markup3)
         bot.send_message(message.chat.id, text="Выберите вариант отчета для генерации", reply_markup=markup)
 
 @bot.callback_query_handler(lambda call: True)
@@ -129,7 +130,19 @@ def make_docx_file(message):
     name = config.user_fullname[config.tg_user['@' + message.from_user.username]]
     start_date = "" + str(dt.now().day) + "/" + str(dt.now().month) + "/" + str(dt.now().year) + " "
     end_date = start_date
-    if type_of_docs == "2":
+    if type_of_docs == "3":
+        doc = DocxTemplate("docx_template/database_check_template.docx")
+        start_date += "15:00:00"
+        end_date += "15:30:00"
+        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
+        doc.render(context)
+        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. БД.docx")
+        logger.info("File saved")
+        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. БД.docx", 'rb')
+        bot.send_document(message.chat.id, file)
+        file.close()
+        logger.info(f"File sent to {message.from_user.username}")
+    elif type_of_docs == "2":
         doc = DocxTemplate("docx_template/reserve_copy_template.docx")
         start_date += "09:30:00"
         end_date += "10:00:00"
@@ -157,6 +170,8 @@ def make_docx_file(message):
         bot.send_document(message.chat.id, file)
         file.close()
         logger.info(f"File sent to {message.from_user.username}")
+
+
 if __name__ == "__main__":
     logger.info("Bot started")
     schedule_thread = Thread(target=schedule_message)
