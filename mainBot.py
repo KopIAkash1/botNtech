@@ -142,7 +142,7 @@ def make_docx_file(message):
         file.close()
         logger.info(f"File sent to {message.from_user.username}")
     elif type_of_docs == "1":
-        if dt.now().hour + config.timezone > 12:
+        if dt.now().hour + config.timezone < 12:
             start_date += "07:00:00"
             end_date += "07:30:00"
         else:
