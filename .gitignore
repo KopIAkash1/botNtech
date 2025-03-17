@@ -9,3 +9,4 @@ schedule.xlsx
 venv
 *.json
 *.db 
+docx_template/
