@@ -2,14 +2,17 @@ import config
 import requests
 import time
 import telebot
-from datetime import datetime
 import pandas as pd
 import logging as log
+import urllib3
+
+from datetime import datetime
 
 bot = telebot.TeleBot(config.api)
 switch_completed = False
 known_tickets = []
 current_user = ""
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Ticket:
     def __init__(self, id, summary, current_time_till_sla):

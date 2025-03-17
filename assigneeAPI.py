@@ -1,8 +1,12 @@
 import requests
 import config
 import pandas as pd
+import urllib3
+
+from loguru import logger
 from datetime import datetime as dt
 
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Ticket():
     def __init__(self, id, context):
@@ -56,7 +60,7 @@ def fromate_to_ticket(response):
 
 def get_tickets(name):
     url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,description&query=Assignee: {name} State: -Closed'
-    print(f"[DEBUG] making request to get tickets: {url}")
+    logger.debug(f"[DEBUG] making request to get tickets: {url}")
     url_headers = {
         'Accept': 'application/json',
         f'Authorization': f'Bearer {config.token}',
@@ -129,11 +133,11 @@ def spam_ticket(ticket_id):
     status, text = send_change_request_ticket(ticket_id, data, "158-10166")
     print(f"DEBUG | Send request to subsystem on ticket: {ticket_id} | {status, text}")
 
-    data = {"id": "158-10165","event": {"id": f"{"resolved"}"}}
+    data = {"id": "158-10165","event": {"id": "resolved"}}
     status, text = send_change_request_ticket(ticket_id, data, "158-10165")
     print(f"DEBUG | Send request to state on ticket: {ticket_id} | {status, text}")
 
-    data = {"id": "158-10165","event": {"id": f"{"closed"}"}}
+    data = {"id": "158-10165","event": {"id": "closed"}}
     status, text = send_change_request_ticket(ticket_id, data, "158-10165")
     print(f"DEBUG | Send request to state on ticket: {ticket_id} | {status, text}")
 
