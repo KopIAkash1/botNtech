@@ -1,17 +1,19 @@
 import telebot
 import config
 import assigneeAPI
-import datetime
 import time
 import random
 import urllib3
 
+from datetime import datetime as dt
+from docxtpl import DocxTemplate 
 from threading import Thread
 from telebot import types
 from loguru import logger
 
 bot = telebot.TeleBot(config.api)
 assignee_from_group = False
+type_of_docs = 0
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 @bot.message_handler(commands=["pong"])
@@ -70,7 +72,7 @@ def get_channel_id(message):
 def schedule_message():
     message_sended = False
     while True:
-        if (datetime.datetime.now().hour == 6 + config.timezone or datetime.datetime.now().hour == 18 + config.timezone) and message_sended != True:
+        if (dt.now().hour == 6 + config.timezone or dt.now().hour == 18 + config.timezone) and message_sended != True:
             assignee_time_message()
             message_sended = True
         time.sleep(30)
@@ -102,7 +104,59 @@ def get_tickets_count(message):
     logger.info(f"Get {len(tickets)} tickets")
     bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов")
 
+@bot.message_handler(commands=['docs'], func= lambda message: check_author_and_format(message))
+def make_docs(message):
+    params = message.text.split(" ")
+    if len(params) == 1:
+        markup = types.InlineKeyboardMarkup()
+        markup1 = types.InlineKeyboardButton("Контроль создания резервных копий (Видеодетектор)", callback_data="doc_type: 2")
+        markup2 = types.InlineKeyboardButton("Проверка срабатывания и уведомлений систем мониторинга", callback_data="doc_type: 1")
+        markup.add(markup1,markup2)
+        bot.send_message(message.chat.id, text="Выберите вариант отчета для генерации", reply_markup=markup)
 
+@bot.callback_query_handler(lambda call: True)
+def docs_callback_handler(call):
+    bot.edit_message_text("Введите номер РР", chat_id=call.message.chat.id, message_id=call.message.message_id)
+    global type_of_docs 
+    type_of_docs = call.data.split(": ")[1]
+    bot.register_next_step_handler(call.message, make_docx_file)
+    logger.info("Started making docx file func")
+    bot.answer_callback_query(call.id)
+
+def make_docx_file(message):
+    logger.info("Making docx file...")
+    number = message.text
+    name = config.user_fullname[config.tg_user['@' + message.from_user.username]]
+    start_date = "" + str(dt.now().day) + "/" + str(dt.now().month) + "/" + str(dt.now().year) + " "
+    end_date = start_date
+    if type_of_docs == "2":
+        doc = DocxTemplate("docx_template/reserve_copy_template.docx")
+        start_date += "09:30:00"
+        end_date += "10:00:00"
+        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
+        doc.render(context=context)
+        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. Резервные копии.docx")
+        logger.info("File saved")
+        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. Резервные копии.docx", 'rb')
+        bot.send_document(message.chat.id, file)
+        file.close()
+        logger.info(f"File sent to {message.from_user.username}")
+    elif type_of_docs == "1":
+        if dt.now().hour + config.timezone > 12:
+            start_date += "07:00:00"
+            end_date += "07:30:00"
+        else:
+            start_date += "19:00:00"
+            end_date += "19:30:00"
+        doc = DocxTemplate("docx_template/monitoring_check_template.docx")
+        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
+        doc.render(context=context)
+        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. Мониторинг.docx")
+        logger.info("File saved")
+        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. Мониторинг.docx", 'rb')
+        bot.send_document(message.chat.id, file)
+        file.close()
+        logger.info(f"File sent to {message.from_user.username}")
 if __name__ == "__main__":
     logger.info("Bot started")
     schedule_thread = Thread(target=schedule_message)
