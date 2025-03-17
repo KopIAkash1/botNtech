@@ -10,3 +10,4 @@ venv
 *.json
 *.db 
 docx_template/
+documents/
