@@ -4,6 +4,7 @@ import assigneeAPI
 import datetime
 import time
 import random
+import urllib3
 
 from threading import Thread
 from telebot import types
@@ -11,6 +12,7 @@ from loguru import logger
 
 bot = telebot.TeleBot(config.api)
 assignee_from_group = False
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
@@ -27,7 +29,7 @@ def assignee_time_message():
 @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
 def assigne_to_user(message):
     global assignee_from_group
-    logger.debug(f"Started assignee func by {message.from_user.username}")
+    logger.info(f"Started assignee func by {message.from_user.username}")
     message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
@@ -39,7 +41,7 @@ def assigne_to_user(message):
                     name = assigneeAPI.assigne_to_next()
                     bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
                     assignee_from_group = True
-                    logger.debug(f"Assignee from {current_user} to {next_user}")
+                    logger.info(f"Assignee from {current_user} to {next_user}")
                 else:
                     print(f"Already assigned")
             else:
@@ -79,7 +81,7 @@ def start(message):
     if "assignee" in message.text:
         assigne_to_user(message)
     elif "spam" in message.text:
-        logger.debug("Sending spam request")
+        logger.info("Sending spam request")
         ticket_id = message.text.split("_")[1]
         assigneeAPI.spam_ticket(ticket_id)
         bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
@@ -92,8 +94,17 @@ def roulette(message):
         person = config.users[random.randrange(5,len(config.users))]
     bot.send_message(message.chat.id, f"Победитель сегодняшней лотерии🎰\n@{person}!\nПоздравляем и/или сочувствуем🫡")
 
+@bot.message_handler(commands=['tickets_count'], func= lambda message : check_author_and_format(message))
+def get_tickets_count(message):
+    logger.info(f"Get request for count tickets by {message.from_user.username}")
+    current_user, _ = assigneeAPI.read_schedule()
+    tickets = assigneeAPI.get_tickets(current_user)
+    logger.info(f"Get {len(tickets)} tickets")
+    bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов")
+
+
 if __name__ == "__main__":
-    logger.debug("Bot started")
+    logger.info("Bot started")
     schedule_thread = Thread(target=schedule_message)
     schedule_thread.start()
     bot.polling()
