@@ -216,7 +216,7 @@ def grant_access_to_view_ticket_follow_up(message):
         markup.row(markup1,markup2)
         markup.row(cancel)
         bot.send_message(message.chat.id, text="Выберите опцию", reply_markup=markup)
-        pass #asd
+        pass #TODO: попробовать сделать без создания дополнительной функции
     #db.add_tickets_to_user(message.from_user.username, tickets="")
 
 
