@@ -6,7 +6,7 @@ cursor = db.cursor()
 def add_tickets_to_user(user, tickets):
     if not __is_user_exist(user): __add_user(user, tickets)
     
-#TODO: Доделать вытаскивание тикетов для дальнейшей проверки
+#TODO: Доделать вытаскивание тикетов для дальнейшей проверки (можно возвращать текстом)
 def get_tickets_by_user(user) -> str:
     pass
         
