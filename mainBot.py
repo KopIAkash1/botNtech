@@ -1,13 +1,12 @@
 import telebot
 import config
-import ticketsAPI
+import utils.ticketsAPI as ticketsAPI
 import time
 import random
 import urllib3
-import utils.db as db
+import utils.filesAPI as fileAPI
 
 from datetime import datetime as dt
-from docxtpl import DocxTemplate 
 from threading import Thread
 from telebot import types
 from loguru import logger
@@ -136,63 +135,22 @@ def cancel_callback_handler(call):
 
 @bot.callback_query_handler(lambda call: call.data in callbacks['docs'])
 def docs_callback_handler(call):
-    bot.edit_message_text("Введите номер РР", chat_id=call.message.chat.id, message_id=call.message.message_id)
-    global type_of_docs 
-    type_of_docs = call.data.split(": ")[1]
-    bot.register_next_step_handler(call.message, make_docx_file)
-    logger.info("Started making docx file func")
-    bot.answer_callback_query(call.id)
+    try:
+        bot.edit_message_text("Введите номер РР", chat_id=call.message.chat.id, message_id=call.message.message_id)
+        global type_of_docs 
+        type_of_docs = call.data.split(": ")[1]
+        bot.register_next_step_handler(call.message, fileAPI.make_docx_file, type_of_docs, bot)
+        logger.info("Started making docx file func")
+        bot.answer_callback_query(call.id)
+    except Exception as e:
+        logger.error(f"Making docs stoped with error {e}") 
+
+    
 
 @bot.callback_query_handler(lambda call: call.data in callbacks['manage_access'])
 def manage_access_callback_handler(call):
     pass
 
-def make_docx_file(message):
-    logger.info("Making docx file...")
-    number = message.text
-    name = config.user_fullname[config.tg_user['@' + message.from_user.username]]
-    start_date = "" + str(dt.now().day) + "/" + str(dt.now().month) + "/" + str(dt.now().year) + " "
-    end_date = start_date
-    if type_of_docs == "3":
-        doc = DocxTemplate("docx_template/database_check_template.docx")
-        start_date += "15:00:00"
-        end_date += "15:30:00"
-        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
-        doc.render(context)
-        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. БД.docx")
-        logger.info("File saved")
-        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. БД.docx", 'rb')
-        bot.send_document(message.chat.id, file)
-        file.close()
-        logger.info(f"File sent to {message.from_user.username}")
-    elif type_of_docs == "2":
-        doc = DocxTemplate("docx_template/reserve_copy_template.docx")
-        start_date += "09:30:00"
-        end_date += "10:00:00"
-        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
-        doc.render(context=context)
-        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. Резервные копии.docx")
-        logger.info("File saved")
-        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. Резервные копии.docx", 'rb')
-        bot.send_document(message.chat.id, file)
-        file.close()
-        logger.info(f"File sent to {message.from_user.username}")
-    elif type_of_docs == "1":
-        if dt.now().hour + config.timezone < 12:
-            start_date += "07:00:00"
-            end_date += "07:30:00"
-        else:
-            start_date += "19:00:00"
-            end_date += "19:30:00"
-        doc = DocxTemplate("docx_template/monitoring_check_template.docx")
-        context = { 'number' : number, 'name' : name, 'start_date' : start_date, 'end_date' : end_date}
-        doc.render(context=context)
-        doc.save(f"documents/ЗНИ {number}. Отчёт о выполнении. Мониторинг.docx")
-        logger.info("File saved")
-        file = open(f"documents/ЗНИ {number}. Отчёт о выполнении. Мониторинг.docx", 'rb')
-        bot.send_document(message.chat.id, file)
-        file.close()
-        logger.info(f"File sent to {message.from_user.username}")
 
 @bot.message_handler(commands=["manage_access"], func=lambda message: check_author_and_format(message))
 def grant_access_to_view_ticket(message):
@@ -222,6 +180,6 @@ def grant_access_to_view_ticket_follow_up(message):
 
 if __name__ == "__main__":
     logger.info(f"Bot started {bot.get_my_name()}")
-    #schedule_thread = Thread(target=schedule_message)
-    #schedule_thread.start()
+    schedule_thread = Thread(target=schedule_message)
+    schedule_thread.start()
     bot.polling()
