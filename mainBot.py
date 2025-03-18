@@ -4,12 +4,20 @@ import ticketsAPI
 import time
 import random
 import urllib3
+import utils.db as db
 
 from datetime import datetime as dt
 from docxtpl import DocxTemplate 
 from threading import Thread
 from telebot import types
 from loguru import logger
+
+callbacks = {
+    'docs': ["doc_type: 1", "doc_type: 2", "doc_type: 3"],
+    'manage_access': ["add", "remove", "remove_user"],
+}
+
+cancel = types.InlineKeyboardButton("Отменя", callback_data="cancel")
 
 bot = telebot.TeleBot(config.api)
 assignee_from_group = False
@@ -81,7 +89,8 @@ def schedule_message():
 @bot.message_handler(commands=["start"])
 def start(message):
     if "assignee" in message.text:
-        assigne_to_user(message)
+        #assigne_to_user(message)
+        pass #remove
     elif "spam" in message.text:
         logger.info("Sending spam request")
         ticket_id = message.text.split("_")[1]
@@ -112,10 +121,20 @@ def make_docs(message):
         markup1 = types.InlineKeyboardButton("Управление объемом и размещением табличных пространств Баз данных", callback_data="doc_type: 3")
         markup2 = types.InlineKeyboardButton("Контроль создания резервных копий (Видеодетектор)", callback_data="doc_type: 2")
         markup3 = types.InlineKeyboardButton("Проверка срабатывания и уведомлений систем мониторинга", callback_data="doc_type: 1")
-        markup.add(markup1,markup2, markup3)
+        markup.add(markup1,markup2,markup3,cancel)
         bot.send_message(message.chat.id, text="Выберите вариант отчета для генерации", reply_markup=markup)
 
-@bot.callback_query_handler(lambda call: True)
+@bot.callback_query_handler(lambda call: call.data == "cancel")
+def cancel_callback_handler(call):
+    try:
+        bot.clear_step_handler_by_chat_id(chat_id=call.message.chat.id)
+        bot.answer_callback_query(call.id, "Операция отменена")
+        bot.edit_message_text("Операция отменена", chat_id=call.message.chat.id, message_id=call.message.message_id)
+        bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=None)
+    except:
+        pass #небольшой похуй)
+
+@bot.callback_query_handler(lambda call: call.data in callbacks['docs'])
 def docs_callback_handler(call):
     bot.edit_message_text("Введите номер РР", chat_id=call.message.chat.id, message_id=call.message.message_id)
     global type_of_docs 
@@ -123,6 +142,10 @@ def docs_callback_handler(call):
     bot.register_next_step_handler(call.message, make_docx_file)
     logger.info("Started making docx file func")
     bot.answer_callback_query(call.id)
+
+@bot.callback_query_handler(lambda call: call.data in callbacks['manage_access'])
+def manage_access_callback_handler(call):
+    pass
 
 def make_docx_file(message):
     logger.info("Making docx file...")
@@ -171,9 +194,34 @@ def make_docx_file(message):
         file.close()
         logger.info(f"File sent to {message.from_user.username}")
 
+@bot.message_handler(commands=["manage_access"], func=lambda message: check_author_and_format(message))
+def grant_access_to_view_ticket(message):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(cancel)
+    bot.send_message(message.chat.id, text="Укажите ID пользователя в Телеграм", reply_markup=markup)
+    bot.register_next_step_handler(message, grant_access_to_view_ticket_follow_up)
+
+#TODO: Доделать логику инструкции
+def grant_access_to_view_ticket_follow_up(message):
+    markup = types.InlineKeyboardMarkup()
+    markup.add(cancel)
+    if len(message.text.split(" ")) > 1: 
+        bot.send_message(message.chat.id, text="Укажите одного пользователя",reply_markup=markup)
+        bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
+        bot.register_next_step_handler(message, grant_access_to_view_ticket_follow_up)
+    else:
+        markup = types.InlineKeyboardMarkup()
+        markup1 = types.InlineKeyboardButton("Добавить доступ к тикету", callback_data="add")
+        markup2 = types.InlineKeyboardButton("Удалить доступ к тикету", callback_data="remove")
+        markup.row(markup1,markup2)
+        markup.row(cancel)
+        bot.send_message(message.chat.id, text="Выберите опцию", reply_markup=markup)
+        pass #TODO: попробовать сделать без создания дополнительной функции
+    #db.add_tickets_to_user(message.from_user.username, tickets="")
+
 
 if __name__ == "__main__":
-    logger.info("Bot started")
-    schedule_thread = Thread(target=schedule_message)
-    schedule_thread.start()
+    logger.info(f"Bot started {bot.get_my_name()}")
+    #schedule_thread = Thread(target=schedule_message)
+    #schedule_thread.start()
     bot.polling()

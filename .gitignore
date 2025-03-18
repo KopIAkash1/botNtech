@@ -11,3 +11,4 @@ venv
 *.db 
 docx_template/
 documents/
+env/
