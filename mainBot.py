@@ -1,6 +1,6 @@
 import telebot
 import config
-import assigneeAPI
+import ticketsAPI
 import time
 import random
 import urllib3
@@ -18,7 +18,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
-    current_user, next_user = assigneeAPI.read_schedule()
+    current_user, next_user = ticketsAPI.read_schedule()
     msg = f'''🎉Переназначение🎉\
     \nТекущий пользователь: {current_user}\
     \nСледующий пользователь: {next_user}
@@ -35,12 +35,12 @@ def assigne_to_user(message):
     message.text = message.text.replace("start ","")    
     try: 
         print(len(str(message.text).split(" ")))
-        current_user, next_user = assigneeAPI.read_schedule()
+        current_user, next_user = ticketsAPI.read_schedule()
         print(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user} and next user is {next_user}")
         if message.text == "/assignee":
             if f"@{message.from_user.username}" == config.user_tg[current_user] or f"@{message.from_user.username}" == config.user_tg[next_user]:
                 if not(assignee_from_group):
-                    name = assigneeAPI.assigne_to_next()
+                    name = ticketsAPI.assigne_to_next()
                     bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
                     assignee_from_group = True
                     logger.info(f"Assignee from {current_user} to {next_user}")
@@ -50,12 +50,12 @@ def assigne_to_user(message):
                 print("User are not allowed to assignee")
         elif len(message.text.split(" ")) == 2:
             next_user = message.text.split(" ")[1]
-            name = assigneeAPI.assigne_to_next(next_user_param=next_user)
+            name = ticketsAPI.assigne_to_next(next_user_param=next_user)
             bot.send_message(message.chat.id, f"📎Переназначение на конкретного пользователя📎\nНазначено:{name}")
         elif len(message.text.split(" ")) == 3:
             old_user = message.text.split(" ")[1]
             next_user = message.text.split(" ")[2]
-            name = assigneeAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
+            name = ticketsAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
             bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}")
     except Exception as e: print(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
 
@@ -85,7 +85,7 @@ def start(message):
     elif "spam" in message.text:
         logger.info("Sending spam request")
         ticket_id = message.text.split("_")[1]
-        assigneeAPI.spam_ticket(ticket_id)
+        ticketsAPI.spam_ticket(ticket_id)
         bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
 
 @bot.message_handler(commands=["roulette"], func = lambda message: check_author_and_format(message))
@@ -99,8 +99,8 @@ def roulette(message):
 @bot.message_handler(commands=['tickets_count'], func= lambda message : check_author_and_format(message))
 def get_tickets_count(message):
     logger.info(f"Get request for count tickets by {message.from_user.username}")
-    current_user, _ = assigneeAPI.read_schedule()
-    tickets = assigneeAPI.get_tickets(current_user)
+    current_user, _ = ticketsAPI.read_schedule()
+    tickets = ticketsAPI.get_tickets(current_user)
     logger.info(f"Get {len(tickets)} tickets")
     bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов")
 

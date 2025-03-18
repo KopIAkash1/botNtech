@@ -3,6 +3,7 @@ import config
 import pandas as pd
 import urllib3
 
+from filesAPI import read_schedule
 from loguru import logger
 from datetime import datetime as dt
 
@@ -13,42 +14,6 @@ class Ticket():
         self.context = context
         self.id = id
         self.url = f"https://tracker.ntechlab.com/tickets/{self.id}"
-
-
-def read_schedule():
-    table = pd.read_excel('./schedule.xlsx', header=None)
-    current_user=""
-    next_user=""
-    current_day = str(dt.now().date())
-    current_hour = dt.now().hour
-    column = 2
-    while True:
-        column += 1
-        value = str(table.iloc[0,column]).split(" ")[0]
-        if value == current_day:
-            for i in range(2,8):
-                value = str(table.iloc[i, column])
-                if value == "9 - 21" and (current_hour > 6 + config.timezone and current_hour <= 18 + config.timezone):
-                    current_user = table.iloc[i,0]
-                    for j in range(2,8):
-                        value = str(table.iloc[j, column])
-                        if value == "21-9":
-                            next_user = table.iloc[j,0]
-                    return config.name_user[current_user], config.name_user[next_user]
-                elif value == "9 - 21" and current_hour <= 6 + config.timezone:
-                    next_user = table.iloc[i, 0]
-                    for j in range(2,8):
-                        value = str(table.iloc[j, column - 1])
-                        if value == "21-9":
-                            current_user = table.iloc[j, 0]
-                    return config.name_user[current_user], config.name_user[next_user]
-                elif value == "21-9" and current_hour > 18 + config.timezone:
-                    current_user = table.iloc[i, 0]
-                    for j in range(2,8):
-                        value = str(table.iloc[j,column + 1])
-                        if value == "9 - 21":
-                            next_user = table.iloc[j,0]
-                    return config.name_user[current_user], config.name_user[next_user]
 
 def fromate_to_ticket(response):
     tickets = []
