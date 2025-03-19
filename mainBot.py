@@ -177,6 +177,20 @@ def grant_access_to_view_ticket_follow_up(message):
         pass #TODO: попробовать сделать без создания допольнительной функции
     #db.set_tickets_to_user(message.from_user.username, tickets="")
 
+@bot.message_handler(commands=['get_comments_json'], func= lambda message: check_author_and_format(message))
+def get_comments_json(message):
+    #TODO: если у пользователя есть права
+    if len(str(message.text).split(" ")) != 2:
+        bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_json SUP-18000`")
+        return
+    number = str(message.text).split(" ")[1]
+    json_path = ticketsAPI.get_contents_of_messages(number)
+    if not(json_path):
+        bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка")
+        return
+    file = open(json_path, 'rb')
+    bot.send_document(message.chat.id, file)
+    file.close()
 
 if __name__ == "__main__":
     logger.info(f"Bot started {bot.get_my_name()}")
