@@ -13,7 +13,10 @@ def set_tickets_to_user(user, tickets):
 def get_tickets_by_user(user) -> str:
     if not __is_user_exist(user): return None
     else: return __get_tickets(user)
-        
+
+#TODO: реализовать удаление тикетов у пользователя
+def rem_tickets_from_user(user, tickets):
+    pass
 
 
 #__*****() ИЗВНЕ НЕ ВЫЗЫВАТЬ!!!
@@ -27,7 +30,12 @@ def __set_user(user, tickets):
     set_tickets_to_user(user, tickets)
 
 def __set_tickets(user, tickets):
-    cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (tickets.strip(), user,))
+    new_tickets = tickets
+    old_tickets = __get_tickets(user)
+    if old_tickets is not None: new_tickets = old_tickets + " " + tickets
+    new_tickets = new_tickets.split(" ")
+    new_tickets = " ".join(list(dict.fromkeys(new_tickets)))
+    cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (new_tickets.strip(), user,))
     db.commit()
 
 def __get_tickets(user):
