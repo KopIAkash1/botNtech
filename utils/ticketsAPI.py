@@ -6,7 +6,7 @@ import re
 
 from bs4 import BeautifulSoup
 from html2text import html2text as ht
-from filesAPI import read_schedule
+from utils.filesAPI import read_schedule
 from loguru import logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
