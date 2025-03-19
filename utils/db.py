@@ -1,4 +1,5 @@
 import sqlite3
+from loguru import logger
 
 db = sqlite3.connect("allowed_to_tickets.db", check_same_thread=False)
 cursor = db.cursor()
@@ -7,16 +8,17 @@ cursor = db.cursor()
 def set_tickets_to_user(user, tickets):
     if not __is_user_exist(user): __set_user(user, tickets)
     __set_tickets(user, tickets)
+
+#TODO: реализовать удаление тикетов у пользователя
+def rem_tickets_from_user(user, tickets):
+    if not __is_user_exist(user): return None
+    else: _rem_tickets(user, tickets)
     
 #Возвращает все тикеты пользователя как строка, обрабатываем там, откуда вызывали
 #Если вызываем и выдает None -> return "Пользователь не найден" или чонить подобное
 def get_tickets_by_user(user) -> str:
     if not __is_user_exist(user): return None
     else: return __get_tickets(user)
-
-#TODO: реализовать удаление тикетов у пользователя
-def rem_tickets_from_user(user, tickets):
-    pass
 
 
 #__*****() ИЗВНЕ НЕ ВЫЗЫВАТЬ!!!
@@ -42,3 +44,17 @@ def __get_tickets(user):
     cursor.execute("SELECT tickets FROM users WHERE TelegramUser = ?", (user,))
     result = cursor.fetchone()[0]
     return result
+
+def _rem_tickets(user, tickets):
+    tickets = tickets.split(" ")
+    tickets = list(dict.fromkeys(tickets))
+    old_tickets = __get_tickets(user).split(" ")
+    if old_tickets is None: return 
+    for item in tickets:
+        try:
+            old_tickets.remove(item)
+        except Exception as e:
+            logger.error(e)
+    old_tickets = " ".join(list(dict.fromkeys(old_tickets)))
+    cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (old_tickets.strip(), user,))
+    db.commit()

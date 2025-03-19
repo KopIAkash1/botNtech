@@ -17,12 +17,12 @@ def init_manage_access_command(bot):
                 bot.edit_message_text("Введите тикеты, к которым требуется выдать доступ", call.message.chat.id, call.message.message_id)
                 bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup_second)
                 bot.register_next_step_handler(call.message, manage_access_to_view_ticket_add)
-            #elif call.data == "remove":
-            #    markup_second = types.InlineKeyboardMarkup()
-            #    markup_second.add(cancel)
-            #    bot.edit_message_text("Введите тикеты, к которым требуется забрать доступ", call.message.chat.id, call.message.message_id)
-            #    bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup_second)
-            #    bot.register_next_step_handler(call.message, manage_access_to_view_ticket_rem)
+            elif call.data == "remove":
+                markup_second = types.InlineKeyboardMarkup()
+                markup_second.add(cancel)
+                bot.edit_message_text("Введите тикеты, к которым требуется забрать доступ", call.message.chat.id, call.message.message_id)
+                bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup_second)
+                bot.register_next_step_handler(call.message, manage_access_to_view_ticket_rem)
         except Exception as e:
             logger.error(f"Something gone wrong with error {e}")
     
@@ -63,10 +63,11 @@ def init_manage_access_command(bot):
             else: goods.append(ticket.upper())
         error = [err for err in error if err.strip()]
         goods = [good for good in goods if good.strip()]
+        goods = list(dict.fromkeys(goods))
         result = ""
         try: db.set_tickets_to_user(user_to_manage, " ".join(goods))
         except Exception as e:
-            user_to_manage 
+            user_to_manage = ""
             logger.error(e)
         user_to_manage = ""
         if len(error) > 0:
@@ -75,26 +76,31 @@ def init_manage_access_command(bot):
         bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
 
     #TODO: Доделать функцию для удаления тикетов в базе, начать делать запрос тикета по номеру, расскоментить хендлер на rem
-    #def manage_access_to_view_ticket_rem(message):
-    #    print(manage_context)
-    #    tickets = message.text.strip().split(" ")
-    #    error = []
-    #    goods = []
-    #    for ticket in tickets:
-    #        ticket.strip()
-    #        if not ticket.upper().startswith("SUP-"): error.append(ticket)
-    #        elif len(ticket) != 9: error.append(ticket)
-    #        else: goods.append(ticket.upper())
-    #    error = [err for err in error if err.strip()]
-    #    goods = [good for good in goods if good.strip()]
-    #    result = ""
-    #    #try: db.set_tickets_to_user(user, " ".join(goods))
-    #    #except Exception as e: 
-    #    #    logger.error(e)
-    #    if len(error) > 0:
-    #        result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
-    #    if len(goods) > 0: result += "*Успешно удаленные тикеты*: \n" + ", ".join(goods)
-    #    bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
+    def manage_access_to_view_ticket_rem(message):
+        global user_to_manage
+        tickets = message.text.strip().split(" ")
+        error = []
+        goods = []
+        for ticket in tickets:
+            ticket.strip()
+            if not ticket.upper().startswith("SUP-"): error.append(ticket)
+            elif len(ticket) != 9: error.append(ticket)
+            else: goods.append(ticket.upper())
+        error = [err for err in error if err.strip()]
+        goods = [good for good in goods if good.strip()]
+        goods = list(dict.fromkeys(goods))
+        result = ""
+        try: 
+            db.rem_tickets_from_user(user_to_manage, " ".join(goods))
+        except Exception as e:
+            user_to_manage = ""
+            logger.error(e)
+        else:
+            user_to_manage = ""
+            if len(error) > 0:
+                result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
+            if len(goods) > 0: result += "*Успешно удаленные тикеты*: \n" + ", ".join(goods)
+            bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
 
 def init_tickets_managment_commands(bot):
     @bot.message_handler(commands=['get_comments_json'], func= lambda message: check_author_and_format(message))
