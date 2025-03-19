@@ -23,7 +23,7 @@ def fromate_to_ticket(response):
         id = item.get('idReadable')
         summary = item.get('summary')
         SLA_time = item.get("fields", [{}])[0].get("value", None)
-        if not(isinstance(SLA_time, int)): SLA_time = 9999999999
+        if not(isinstance(SLA_time, int)): SLA_time = 0
         tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
