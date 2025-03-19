@@ -5,6 +5,7 @@ import time
 import random
 import urllib3
 import utils.filesAPI as fileAPI
+import utils.db as db
 
 from datetime import datetime as dt
 from threading import Thread
@@ -15,6 +16,8 @@ callbacks = {
     'docs': ["doc_type: 1", "doc_type: 2", "doc_type: 3"],
     'manage_access': ["add", "remove", "remove_user"],
 }
+
+#Сильный костыль конешн, но я не нашел в доке как мне передавать контекст через степ хендлеры, поэтому пока так
 
 cancel = types.InlineKeyboardButton("Отменя", callback_data="cancel")
 
@@ -126,6 +129,8 @@ def make_docs(message):
 @bot.callback_query_handler(lambda call: call.data == "cancel")
 def cancel_callback_handler(call):
     try:
+        global user_to_manage
+        user_to_manage = ""
         bot.clear_step_handler_by_chat_id(chat_id=call.message.chat.id)
         bot.answer_callback_query(call.id, "Операция отменена")
         bot.edit_message_text("Операция отменена", chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -145,38 +150,94 @@ def docs_callback_handler(call):
     except Exception as e:
         logger.error(f"Making docs stoped with error {e}") 
 
-    
-
 @bot.callback_query_handler(lambda call: call.data in callbacks['manage_access'])
 def manage_access_callback_handler(call):
-    pass
-
-
+    try:
+        if call.data == "add":
+            markup_second = types.InlineKeyboardMarkup()
+            markup_second.add(cancel)
+            bot.edit_message_text("Введите тикеты, к которым требуется выдать доступ", call.message.chat.id, call.message.message_id)
+            bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup_second)
+            bot.register_next_step_handler(call.message, manage_access_to_view_ticket_add)
+        #elif call.data == "remove":
+        #    markup_second = types.InlineKeyboardMarkup()
+        #    markup_second.add(cancel)
+        #    bot.edit_message_text("Введите тикеты, к которым требуется забрать доступ", call.message.chat.id, call.message.message_id)
+        #    bot.edit_message_reply_markup(call.message.chat.id, call.message.message_id, reply_markup=markup_second)
+        #    bot.register_next_step_handler(call.message, manage_access_to_view_ticket_rem)
+    except Exception as e:
+        logger.error(f"Something gone wrong with error {e}")
+ 
 @bot.message_handler(commands=["manage_access"], func=lambda message: check_author_and_format(message))
-def grant_access_to_view_ticket(message):
+def manage_access_to_view_ticket(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(cancel)
     bot.send_message(message.chat.id, text="Укажите ID пользователя в Телеграм", reply_markup=markup)
-    bot.register_next_step_handler(message, grant_access_to_view_ticket_follow_up)
+    bot.register_next_step_handler(message, manage_access_to_view_ticket_follow_up)
 
-#TODO: Доделать логику инструкции
-def grant_access_to_view_ticket_follow_up(message):
+def manage_access_to_view_ticket_follow_up(message):
     markup = types.InlineKeyboardMarkup()
     markup.add(cancel)
-    if len(message.text.split(" ")) > 1: 
+    if len(message.text.strip().split(" ")) > 1:
         bot.send_message(message.chat.id, text="Укажите одного пользователя",reply_markup=markup)
         bot.clear_step_handler_by_chat_id(chat_id=message.chat.id)
-        bot.register_next_step_handler(message, grant_access_to_view_ticket_follow_up)
+        bot.register_next_step_handler(message, manage_access_to_view_ticket_follow_up)
     else:
+        if message.text.startswith("@"): message.text = message.text[1:]
+        global user_to_manage
+        user_to_manage = message.text.lower()
         markup = types.InlineKeyboardMarkup()
-        markup1 = types.InlineKeyboardButton("Добавить доступ к тикету", callback_data="add")
-        markup2 = types.InlineKeyboardButton("Удалить доступ к тикету", callback_data="remove")
-        markup.row(markup1,markup2)
+        markup_but1 = types.InlineKeyboardButton("Добавить доступ к тикету", callback_data="add")
+        markup_but2 = types.InlineKeyboardButton("Удалить доступ к тикету", callback_data="remove")
+        markup.row(markup_but1, markup_but2)
         markup.row(cancel)
         bot.send_message(message.chat.id, text="Выберите опцию", reply_markup=markup)
-        pass #TODO: попробовать сделать без создания допольнительной функции
-    #db.set_tickets_to_user(message.from_user.username, tickets="")
+#TODO: Вынести команды в отдельный файл и там сделать красивый код
+def manage_access_to_view_ticket_add(message):
+    global user_to_manage
+    tickets = message.text.strip().split(" ")
+    error = []
+    goods = []
+    for ticket in tickets:
+        ticket.strip()
+        if not ticket.upper().startswith("SUP-"): error.append(ticket)
+        elif len(ticket) != 9: error.append(ticket)
+        else: goods.append(ticket.upper())
+    error = [err for err in error if err.strip()]
+    goods = [good for good in goods if good.strip()]
+    result = ""
+    try: db.set_tickets_to_user(user_to_manage, " ".join(goods))
+    except Exception as e:
+        user_to_manage 
+        logger.error(e)
+    user_to_manage = ""
+    if len(error) > 0:
+        result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
+    if len(goods) > 0: result += "*Успешно добавленные тикеты*: \n" + ", ".join(goods)
+    bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
 
+#TODO: Тот же самый коммент что и выше, вынести команды и сделать красивее
+#TODO: Доделать функцию для удаления тикетов в базе, начать делать запрос тикета по номеру, расскоментить хендлер на rem
+#def manage_access_to_view_ticket_rem(message):
+#    print(manage_context)
+#    tickets = message.text.strip().split(" ")
+#    error = []
+#    goods = []
+#    for ticket in tickets:
+#        ticket.strip()
+#        if not ticket.upper().startswith("SUP-"): error.append(ticket)
+#        elif len(ticket) != 9: error.append(ticket)
+#        else: goods.append(ticket.upper())
+#    error = [err for err in error if err.strip()]
+#    goods = [good for good in goods if good.strip()]
+#    result = ""
+#    #try: db.set_tickets_to_user(user, " ".join(goods))
+#    #except Exception as e: 
+#    #    logger.error(e)
+#    if len(error) > 0:
+#        result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
+#    if len(goods) > 0: result += "*Успешно удаленные тикеты*: \n" + ", ".join(goods)
+#    bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
 
 if __name__ == "__main__":
     logger.info(f"Bot started {bot.get_my_name()}")
