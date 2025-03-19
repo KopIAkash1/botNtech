@@ -4,7 +4,6 @@ import urllib3
 import json
 
 from bs4 import BeautifulSoup
-from html2text import html2text as ht
 from utils.filesAPI import read_schedule
 from loguru import logger
 from datetime import datetime as dt
@@ -24,7 +23,8 @@ def fromate_to_ticket(response):
         id = item.get('idReadable')
         summary = item.get('summary')
         SLA_time = item.get("fields", [{}])[0].get("value", None)
-        if isinstance(SLA_time, int): tickets.append(Ticket(id,summary,SLA_time))
+        if not(isinstance(SLA_time, int)): SLA_time = 9999999999
+        tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
 def get_tickets(name):
