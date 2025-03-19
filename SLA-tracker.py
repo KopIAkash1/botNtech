@@ -24,7 +24,7 @@ def send_SLA_break_message(tickets):
                     \nhttps://tracker.ntechlab.com/tickets/{ticket.id}\
                     \n{config.user_tg[current_user]}'''
                 known_tickets_file.write(f"{ticket.id}\n")
-                bot.send_message(chat_id=1447605962, text = msg, reply_to_message_id=0)
+                bot.send_message(chat_id=config.group_chat_pid, text = msg, reply_to_message_id=172548)
         known_tickets_file.close()
 
 def get_known_tickets():
