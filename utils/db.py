@@ -30,7 +30,7 @@ def __set_tickets(user, tickets):
     cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (tickets.strip(), user,))
     db.commit()
 
-def __get_tickets(user) -> str :
+def __get_tickets(user):
     cursor.execute("SELECT tickets FROM users WHERE TelegramUser = ?", (user,))
     result = cursor.fetchone()[0]
     return result
