@@ -1,8 +1,12 @@
 import requests
 import config
 import urllib3
+import json
+import re 
 
-from utils.filesAPI import read_schedule
+from bs4 import BeautifulSoup
+from html2text import html2text as ht
+from filesAPI import read_schedule
 from loguru import logger
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -102,5 +106,41 @@ def spam_ticket(ticket_id):
 
     logger.info(f"Spam requests ended for {ticket_id}")
 
+#TODO: укоротить реквест
+def get_ticket_content(ticket_id):
+    logger.info(f"Making request to get info about {ticket_id}")
+    url = f"https://tracker.ntechlab.com/api/issues/{ticket_id}/activitiesPage?categories=IssueCreatedCategory,CommentsCategory&reverse=true&fields=activities(category(id()),added(id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),localizedName,numberInProject,project(name,shortName),author(ringId,avatarUrl,canReadProfile,isLocked,login,name,id,email,isEmailVerified,guest,fullName,online,banned,banBadge,userType(id)),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id),resolved,idReadable,summary,mentionedUsers(%40author),mentionedIssues(id,reporter(%40author),resolved,updated,created,unauthenticatedReporter,fields(value(id,minutes,presentation,name,description,localizedName,isResolved,color(%40color),buildIntegration,buildLink,text,issueRelatedGroup(%40issueRelatedGroup),ringId,login,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),allUsersGroup,icon,teamForProject(name,shortName)),id,$type,hasStateMachine,isUpdatable,projectCustomField($type,id,field(id,name,ordinal,aliases,localizedName,fieldType(id,presentation,isBundleType,valueType,isMultiValue)),bundle(id,$type),canBeEmpty,emptyFieldText,hasRunningJob,ordinal,isSpentTime,isPublic),searchResults(id,textSearchResult(highlightRanges(%40highlightRanges),textRange(%40highlightRanges))),pausedTime),project(%40project),visibility(%40visibility),tags(%40tags),votes,voters(hasVote),watchers(hasStar),usersTyping(timestamp,user(%40value1)),canUndoComment,idReadable,summary),mentionedArticles(id,idReadable,reporter(%40value1),summary,project(%40project),parentArticle(idReadable),ordinal,visibility(%40visibility),hasUnpublishedChanges,hasChildren,tags(%40tags)),creator(%40value1),text,type(%40value),duration(minutes,presentation),textPreview,date,usesMarkdown,attributes(id,name,value(%40value)),files,commands(errorText,hasError,start,end),noHubUserReason($type,id),noUserReason($type,id),pullRequest($type,author(%40value1),date,fetched,processor(id,$type),files,id,branch,idExternal,noHubUserReason($type,id),noUserReason($type,id),title,text,url),urls,processors(id,$type),state($type,id()),version,deleted,pinned,attachments(id,name,author(%40author1),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id)),reactions(id,reaction,author(%40value1)),reactionOrder,hasEmail,canUpdateVisibility,suspiciousEmail,issue(id,project(id)),markdownEmbeddings(key,settings,widget(id)),reaction,profileUrl,membership(id,name,avatarUrl,__entityId),unverifiedEmail,isReporter,isAgent,presentation),removed(id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),localizedName,numberInProject,project(name,shortName),author(%40author1),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id),resolved,idReadable,summary,presentation),issue(description,customFields(name,projectCustomField(emptyFieldText,field(id,localizedName,name,fieldType(%40fieldType))),value(%40value1))),id,author(%40author),authorGroup(ringId),timestamp,field(id,presentation,customField(fieldType(%40fieldType))),target(id,$type),targetMember,type,pseudo,emptyFieldText),hasBefore,hasAfter,beforeCursor,afterCursor,cursor%3B%40comment%3Aid,visibility(%40visibility)%3B%40visibility%3A$type,implicitPermittedUsers(%40value1),permittedGroups(%40issueRelatedGroup),permittedUsers(%40value1)%3B%40project%3Aid,ringId,name,shortName,iconUrl,template,pinned,archived,isDemo,organization(),hasArticles,team(%40issueRelatedGroup),fieldsSorted,restricted,plugins(timeTrackingSettings(id,enabled),helpDeskSettings(id,enabled,defaultForm(uuid,title)),vcsIntegrationSettings(hasVcsIntegrations),grazie(disabled))%3B%40author%3AissueRelatedGroup(%40issueRelatedGroup),id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id)%3B%40value%3Aid,name,autoAttach,description,hasRunningJobs,color(%40color),attributes(id,timeTrackingSettings(id,project(id)))%3B%40value1%3Aid,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id)%3B%40issueRelatedGroup%3Aid,name,ringId,allUsersGroup,icon,teamForProject(name,shortName)%3B%40searchResults%3AtextSearchResult(highlightRanges(%40highlightRanges))%3B%40author1%3AringId,avatarUrl,canReadProfile,isLocked,login,name%3B%40tags%3Aid,name,color(%40color)%3B%40color%3Aid,background,foreground%3B%40fieldType%3AvalueType,isMultiValue%3B%40highlightRanges%3AstartOffset,endOffset"
+    url_headers = {
+        'Accept': 'application/json',
+        f'Authorization': f'Bearer {config.token}',
+        'Content-Type': 'application/json'
+    }
+    response = requests.get(url=url, headers=url_headers, verify=False)
+    logger.info(f"Get response {response.status_code}")
+    return response
+
+#TODO: split полумера. Можно подумать о более качественном форматировании
+def formate_contents_to_messages(ticket_id, internal_visibility = False):
+    data = get_ticket_content(ticket_id)
+    json_data = data.json()
+    logger.info(f"Get messages from ticket {ticket_id} : {len(json_data['activities'])}")
+    resulted_json = {"ticket_id" : ticket_id}
+    comments = {}
+    for i in range(len(json_data['activities'])-1):
+        author = json_data['activities'][i]['author']['email']
+        soup = BeautifulSoup(json_data['activities'][i]['added'][0]['text'], 'html.parser')
+        text = soup.get_text(separator='\n', strip=True).split("##- Please enter your reply above this line -##")[0]
+        visibility = json_data['activities'][i]['added'][0]['visibility']['$type']
+        if author != None:
+            if visibility != "LimitedVisibility" or internal_visibility:
+                comments.update({i : {author : text}})
+    resulted_json.update({"comments" : comments})
+    with open(f"comments_files/{ticket_id}_comments.json", 'w', encoding='utf-8') as file:
+        json.dump(resulted_json,file,ensure_ascii=False,indent=4)
+    logger.info(f'Json file saved as comments_files/{ticket_id}_comments.json')
+
 if __name__ == "__main__":
-    assigne_to_next()
+    #assigne_to_next()
+    formate_contents_to_messages('SUP-18686')
+    formate_contents_to_messages('SUP-18574')
+    formate_contents_to_messages('SUP-18609')
