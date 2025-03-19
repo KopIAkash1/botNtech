@@ -1,67 +1,15 @@
 import config
-import requests
-import time
 import telebot
-import pandas as pd
-import logging as log
 import urllib3
+import utils.ticketsAPI as ticketAPI
+import utils.filesAPI as filesAPI
+import time
 
-from datetime import datetime
+from loguru import logger
 
 bot = telebot.TeleBot(config.api)
-switch_completed = False
 known_tickets = []
-current_user = ""
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-class Ticket:
-    def __init__(self, id, summary, current_time_till_sla):
-        self.id = id
-        self.summary = summary
-        self.sla_time = datetime.fromtimestamp(current_time_till_sla / 1000)
-        self.sla_state = current_time_till_sla > datetime.timestamp(datetime.now()) * 1000
-
-
-def read_schedule():
-    table = pd.read_excel('./schedule.xlsx', header=None)
-    current_day = str(datetime.now().date())
-    current_hour = datetime.now().hour
-    column = 3
-    while True:
-        column += 1
-        value = str(table.iloc[0,column]).split(" ")[0]
-        if value == current_day:
-            for i in range(2,8):
-                value = str(table.iloc[i, column])
-                print(value)
-                if value == "9 - 21" and (current_hour >= 9 and current_hour < 21):
-                    current_user = table.iloc[i,0]
-                    return config.name_user[current_user]
-                elif value == "21-9" and (current_hour >= 21 or current_hour <= 9):
-                    current_user = table.iloc[i,0]
-                    return config.name_user[current_user]
-
-def get_current_tasks():
-    url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,fields(value)&query=State:%20%7BWaiting%20for%20support%7D%20State:%20-Closed%20Project:%20%7BSupport%20%7C%20Служба%20поддержки%7D%20' 
-    url_headers = {
-        'Accept': 'application/json',
-        f'Authorization': f'Bearer {config.token}',
-        'Content-Type': 'application/json'
-    }
-    request = requests.get(url, headers=url_headers, verify=False)
-    return request.json()
-
-def fromate_to_ticket(response):
-    tickets = []
-    for item in response:
-        id = item.get('idReadable')
-        summary = item.get('summary')
-        SLA_time = item.get("fields", [{}])[0].get("value", None)
-        #try:
-        #    print(f"{id} - {SLA_time} - {SLA_time > datetime.timestamp(datetime.now())} - {datetime.timestamp(datetime.now())}")
-        #except Exception as e: print(e)
-        if isinstance(SLA_time, int): tickets.append(Ticket(id,summary,SLA_time))
-    return tickets
 
 def send_SLA_break_message(tickets):
     global current_user
@@ -72,11 +20,11 @@ def send_SLA_break_message(tickets):
             elif (ticket.sla_state == False):
                 msg = f'''🔴Истек срок решения🔴\
                     \n{ticket.id}\
-                    \n{ticket.summary}\
+                    \n{ticket.context}\
                     \nhttps://tracker.ntechlab.com/tickets/{ticket.id}\
                     \n{config.user_tg[current_user]}'''
                 known_tickets_file.write(f"{ticket.id}\n")
-                bot.send_message(chat_id=config.group_chat_pid, text = msg, reply_to_message_id=172548)
+                bot.send_message(chat_id=1447605962, text = msg, reply_to_message_id=0)
         known_tickets_file.close()
 
 def get_known_tickets():
@@ -86,25 +34,18 @@ def get_known_tickets():
                 known_tickets.append(line[:-1])
         known_tickets_file.close()
 
-def switch_user(to_night):
-    global current_user
-    global switch_completed
-    global user_and_next_user
-    current_user = list(user_and_next_user[current_user])[1 if to_night else 0]
-    print(f"[DEBUG] | Current user changed to : {current_user}")
-
 def polling():
-    global current_user
+    current_user = ''
     global switch_completed
     while True:
         get_known_tickets()
-        response = get_current_tasks()
-        tickets = fromate_to_ticket(response)
-        #send_SLA_break_message(tickets)
+        current_user, _ = filesAPI.read_schedule()
+        logger.info(f"Current user for check is: {current_user}")
+        response = ticketAPI.get_tickets(current_user)
+        tickets = ticketAPI.fromate_to_ticket(response)
+        logger.info(f"Get {len(tickets)} for user {current_user}")
+        send_SLA_break_message(tickets)
         time.sleep(600)
 
-
 if __name__ == "__main__":
-    current_user = read_schedule()
-    print(f"[DEBUG] | Current user : {current_user}")
     polling()
