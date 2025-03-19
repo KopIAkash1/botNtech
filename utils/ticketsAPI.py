@@ -122,9 +122,11 @@ def get_ticket_content(ticket_id):
     return response
 
 #TODO: split полумера. Можно подумать о более качественном форматировании
-def formate_contents_to_messages(ticket_id, internal_visibility = False):
-    data = get_ticket_content(ticket_id)
-    json_data = data.json()
+def get_contents_of_messages(ticket_id, internal_visibility = False):
+    response = get_ticket_content(ticket_id)
+    if response.status_code != 200: 
+        return False
+    json_data = response.json()
     logger.info(f"Get messages from ticket {ticket_id} : {len(json_data['activities'])}")
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
@@ -137,6 +139,8 @@ def formate_contents_to_messages(ticket_id, internal_visibility = False):
             if visibility != "LimitedVisibility" or internal_visibility:
                 comments.update({i : {author : text}})
     resulted_json.update({"comments" : comments})
-    with open(f"comments_files/{ticket_id}_comments.json", 'w', encoding='utf-8') as file:
+    file_path = f"comments_files/{ticket_id}_comments.json"
+    with open(file_path, 'w', encoding='utf-8') as file:
         json.dump(resulted_json,file,ensure_ascii=False,indent=4)
     logger.info(f'Json file saved as comments_files/{ticket_id}_comments.json')
+    return file_path
