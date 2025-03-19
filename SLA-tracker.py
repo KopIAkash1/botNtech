@@ -11,8 +11,7 @@ bot = telebot.TeleBot(config.api)
 known_tickets = []
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-def send_SLA_break_message(tickets):
-    global current_user
+def send_SLA_break_message(tickets, current_user):
     global switch_completed
     with open('sla_broken_tickets.txt', 'a') as known_tickets_file:
         for ticket in tickets:
@@ -44,7 +43,7 @@ def polling():
         response = ticketAPI.get_tickets(current_user)
         tickets = ticketAPI.fromate_to_ticket(response)
         logger.info(f"Get {len(tickets)} for user {current_user}")
-        send_SLA_break_message(tickets)
+        send_SLA_break_message(tickets, current_user)
         time.sleep(600)
 
 if __name__ == "__main__":
