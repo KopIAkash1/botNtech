@@ -88,8 +88,7 @@ def schedule_message():
 @bot.message_handler(commands=["start"])
 def start(message):
     if "assignee" in message.text:
-        #assigne_to_user(message)
-        pass #remove
+        assigne_to_user(message)
     elif "spam" in message.text:
         logger.info("Sending spam request")
         ticket_id = message.text.split("_")[1]
