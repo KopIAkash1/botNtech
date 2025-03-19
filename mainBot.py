@@ -91,8 +91,7 @@ def schedule_message():
 @bot.message_handler(commands=["start"])
 def start(message):
     if "assignee" in message.text:
-        #assigne_to_user(message)
-        pass #remove
+        assigne_to_user(message)
     elif "spam" in message.text:
         logger.info("Sending spam request")
         ticket_id = message.text.split("_")[1]
@@ -215,7 +214,6 @@ def manage_access_to_view_ticket_add(message):
         result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
     if len(goods) > 0: result += "*Успешно добавленные тикеты*: \n" + ", ".join(goods)
     bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
-
 #TODO: Тот же самый коммент что и выше, вынести команды и сделать красивее
 #TODO: Доделать функцию для удаления тикетов в базе, начать делать запрос тикета по номеру, расскоментить хендлер на rem
 #def manage_access_to_view_ticket_rem(message):
@@ -238,6 +236,21 @@ def manage_access_to_view_ticket_add(message):
 #        result += "*Ошибка при обработке тикетов*: \n" + ", ".join(error) + "\n\n"
 #    if len(goods) > 0: result += "*Успешно удаленные тикеты*: \n" + ", ".join(goods)
 #    bot.send_message(message.chat.id, parse_mode="Markdown", text=result)
+
+@bot.message_handler(commands=['get_comments_json'], func= lambda message: check_author_and_format(message))
+def get_comments_json(message):
+    #TODO: если у пользователя есть права
+    if len(str(message.text).split(" ")) != 2:
+        bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_json SUP-18000`")
+        return
+    number = str(message.text).split(" ")[1]
+    json_path = ticketsAPI.get_contents_of_messages(number)
+    if not(json_path):
+        bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка")
+        return
+    file = open(json_path, 'rb')
+    bot.send_document(message.chat.id, file)
+    file.close()
 
 if __name__ == "__main__":
     logger.info(f"Bot started {bot.get_my_name()}")

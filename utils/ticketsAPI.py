@@ -2,32 +2,34 @@ import requests
 import config
 import urllib3
 import json
-import re 
 
 from bs4 import BeautifulSoup
-from html2text import html2text as ht
 from utils.filesAPI import read_schedule
 from loguru import logger
-
+from datetime import datetime as dt
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 class Ticket():
-    def __init__(self, id, context):
+    def __init__(self, id, context, current_time_till_sla):
         self.context = context
         self.id = id
         self.url = f"https://tracker.ntechlab.com/tickets/{self.id}"
+        self.sla_time = dt.fromtimestamp(current_time_till_sla / 1000)
+        self.sla_state = current_time_till_sla > dt.timestamp(dt.now()) * 1000
 
 def fromate_to_ticket(response):
     tickets = []
     for item in response:
         id = item.get('idReadable')
         summary = item.get('summary')
-        tickets.append(Ticket(id,summary))
+        SLA_time = item.get("fields", [{}])[0].get("value", None)
+        if not(isinstance(SLA_time, int)): SLA_time = 0
+        tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
 def get_tickets(name):
-    url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,description&query=Assignee: {name} State: -Closed'
-    logger.debug(f"[DEBUG] making request to get tickets: {url}")
+    url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=Assignee: {name} State: -Closed'
+    logger.info(f"Making request to get tickets: {url}")
     url_headers = {
         'Accept': 'application/json',
         f'Authorization': f'Bearer {config.token}',
@@ -120,9 +122,11 @@ def get_ticket_content(ticket_id):
     return response
 
 #TODO: split полумера. Можно подумать о более качественном форматировании
-def formate_contents_to_messages(ticket_id, internal_visibility = False):
-    data = get_ticket_content(ticket_id)
-    json_data = data.json()
+def get_contents_of_messages(ticket_id, internal_visibility = False):
+    response = get_ticket_content(ticket_id)
+    if response.status_code != 200: 
+        return False
+    json_data = response.json()
     logger.info(f"Get messages from ticket {ticket_id} : {len(json_data['activities'])}")
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
@@ -135,12 +139,8 @@ def formate_contents_to_messages(ticket_id, internal_visibility = False):
             if visibility != "LimitedVisibility" or internal_visibility:
                 comments.update({i : {author : text}})
     resulted_json.update({"comments" : comments})
-    with open(f"comments_files/{ticket_id}_comments.json", 'w', encoding='utf-8') as file:
+    file_path = f"comments_files/{ticket_id}_comments.json"
+    with open(file_path, 'w', encoding='utf-8') as file:
         json.dump(resulted_json,file,ensure_ascii=False,indent=4)
     logger.info(f'Json file saved as comments_files/{ticket_id}_comments.json')
-
-if __name__ == "__main__":
-    #assigne_to_next()
-    formate_contents_to_messages('SUP-18686')
-    formate_contents_to_messages('SUP-18574')
-    formate_contents_to_messages('SUP-18609')
+    return file_path
