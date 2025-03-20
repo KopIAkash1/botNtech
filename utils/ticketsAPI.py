@@ -27,8 +27,8 @@ def fromate_to_ticket(response):
         tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
-def get_tickets(name):
-    url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=Assignee: {name} State: -Closed'
+def get_tickets(name, url = ""):
+    if url == "" : url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=Assignee: {name} State: -Closed'
     logger.info(f"Making request to get tickets: {url}")
     url_headers = {
         'Accept': 'application/json',
