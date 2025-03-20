@@ -1,10 +1,13 @@
 import config
-import telebot
+import json
+import re
 
+from bs4 import BeautifulSoup
 from loguru import logger
 from datetime import datetime as dt
 from pandas import read_excel
 from docxtpl import DocxTemplate
+
 
 
 def read_schedule():
@@ -81,3 +84,109 @@ def make_docx_file(message, type_of_docs, bot) -> str:
     bot.send_document(message.chat.id, file)
     logger.info(f"File sended to {message.from_user.username}")
     file.close()
+
+def make_html_file(json_path):
+    #тестовые авы
+    image_support = "https://www.appengine.ai/uploads/images/profile/logo/NTechLab-AI.png"
+    image_customer = "https://media.istockphoto.com/id/1332358775/photo/young-couple-shaking-hands-deal-contract-real-estate-investment-business-agreement-agent.jpg?s=612x612&w=0&k=20&c=tADtuQ9F_eKe_hMH0k5Ldg7N4p5BojisWf2n-jXar_I="
+    result = ""
+
+    with open(json_path, 'rb') as f:
+        data = json.load(f)
+
+    for item in data['comments']:
+        user = next(iter(data['comments'][item].keys()))
+        message = next(iter(data['comments'][item].values())).replace("\n", "<br>")
+        code_blocks = re.findall(r'```(.*?)```', message, re.DOTALL)
+
+        for code in code_blocks:
+            message = message.replace(f'```{code}```', f'<pre class="code_block"><code>{code}</code></pre>')
+
+        data['comments'][item][user] = message
+
+        if user.endswith("ntechlab.com"): message = f'<div class="message sender"><p class="chatter"><img src="{image_support}">NtechLab Support Team | {user}</p><p><br>' + message + "</p></div>"
+        else: message = f'<div class="message receiver"><p class="chatter"><img src="{image_customer}">Customer | {user}</p><p><br>' + message + "</p></div>"
+        result += message
+
+    soup =  BeautifulSoup(f'''<!DOCTYPE html>
+    <html lang="ru">
+     <head>
+      <meta charset="utf-8"/>
+      <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+      <title>
+       {data['ticket_id']}
+      </title>
+      <style>
+       body {{
+            background-color: #141414;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+        }}        
+        .chat-container {{
+            max-width: 900px;
+            margin: auto;
+            padding: 10px;
+            border: 2px solid #383838;
+            border-radius: 7px;
+            overflow-y: auto;
+            height: 85vh;
+        }}
+        .message {{
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+            position: relative;
+        }}
+        .message.sender {{
+            background-color: #484949;
+            align-self: flex-end;
+        }}
+        .message.receiver {{
+            background-color: #ff3d3d73;
+        }}
+        .message p {{
+            margin: 0;
+        }}
+        .code_block {{
+            white-space: pre-wrap;
+            background-color: #201f1f;
+            padding: 4px;
+            border: 20px;
+            overflow: auto;
+            font-family: monospace;
+            max-height: 400px;
+            color:#e0e0e0;
+        }}
+        .chatter {{
+            font-size: 10px;
+            font-weight: bold;
+            outline: #141414;
+            color: #5aa7ff;
+            display: flex;
+            align-items: center;
+        }}
+        .chatter img {{
+            margin-right: 10px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            object-fit: cover;
+            overflow: hidden;
+        }}
+      </style>
+     </head>
+     <body>
+        <div class="chat-container" id="chat">
+            {result}
+        </div>
+     </body>
+    </html>''', 'html.parser')
+
+    try:
+        with open(f"comments_files/{data['ticket_id']}.html", 'w', encoding="utf-8") as file:
+            file.write(soup.prettify())
+    except Exception as e:
+        logger.error(e)
+    return f"comments_files/{data['ticket_id']}.html"
