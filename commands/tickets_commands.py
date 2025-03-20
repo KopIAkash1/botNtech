@@ -120,12 +120,26 @@ def init_tickets_managment_commands(bot):
         file.close()
 
     #TODO: Заменить лямбду на другую, которая будет чекать по бд людей с доступом, а не по конфигу 
-    @bot.message_handler(commands=['get_comments_html'], func= lambda message: check_author_and_format(message))
+    @bot.message_handler(commands=['get_comments_html'])
     def get_comments_html(message):
         if len(str(message.text).split(" ")) != 2:
             bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_html SUP-18000`")
             return
         number = str(message.text).split(" ")[1]
+        if message.from_user.username not in config.users: pass
+        elif db.is_user_exist(message.from_user.username.lower()): 
+            try:
+                tickets = db.get_tickets_by_user(message.from_user.username.lower())
+                tickets = tickets.split(" ")
+                if number in tickets: pass
+                else: 
+                    bot.send_message(message.chat.id, "Нет доступа к тикету")
+                    return
+            except Exception as e:
+                logger.error(e)
+        else: 
+            bot.send_message(message.chat.id, "Нет прав")
+            return
         json_path = ticketsAPI.get_contents_of_messages(number)
         if not(json_path):
             bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка")
