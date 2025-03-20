@@ -108,7 +108,7 @@ def init_tickets_managment_commands(bot):
     def get_comments_json(message):
         #TODO: если у пользователя есть права
         if len(str(message.text).split(" ")) != 2:
-            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_json SUP-18000`")
+            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например /get_comments_json SUP-18000")
             return
         number = str(message.text).split(" ")[1]
         json_path = ticketsAPI.get_contents_of_messages(number)

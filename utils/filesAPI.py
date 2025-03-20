@@ -5,10 +5,11 @@ import re
 from bs4 import BeautifulSoup
 from loguru import logger
 from datetime import datetime as dt
+
 from pandas import read_excel
 from docxtpl import DocxTemplate
-
-
+from json import loads
+from os import path, remove
 
 def read_schedule():
     table = read_excel('./schedule.xlsx', header=None)
@@ -84,6 +85,49 @@ def make_docx_file(message, type_of_docs, bot) -> str:
     bot.send_document(message.chat.id, file)
     logger.info(f"File sended to {message.from_user.username}")
     file.close()
+
+def __json_comments_to_text(comments_json) -> str:
+    text = []
+    for comment in comments_json['comments']:
+        for author in comments_json['comments'][comment]:
+            text.append(f'''Автор: {author}\nСообщение: \n{comments_json['comments'][comment][author]}\n\n\n
+                        ---------------------------------------------------------'''
+                        .replace("<","").replace(">",""))
+    return text
+
+def comments_json_to_doc(json_path):
+    logger.info("Starting creating docx from json")
+    comments_json = {}
+    try: 
+        with open(json_path, 'r', encoding='utf-8') as file:
+            comments_json = loads(file.read())
+            logger.info("Json successfully readed")
+    except Exception as e:
+        logger.error(f"In creating docs file for comments get exception as {e}") #'messages' : comments_text,
+        return
+
+    ticket_id = comments_json['ticket_id']
+    comments_text = __json_comments_to_text(comments_json)
+    messages_count = len(comments_json['comments'])
+    messages_template = ''
+    docx = DocxTemplate("docx_template/comments_ticket_template.docx")
+    for i in range(messages_count) : messages_template += "{{" + f" message{i} " + "}}\n"
+    context = {'ticket_id' : ticket_id, 'messages' : messages_template, 'maked_date' : f"{dt.now().date()} {dt.now().time()}"}
+    docx.render(context)
+    docx.save(f"documents/{ticket_id}_comments_template.docx")
+    logger.info("Template docx generated successfully")
+    docx = DocxTemplate(f"documents/{ticket_id}_comments_template.docx")
+    context = {}
+    for i in range(messages_count):
+        context.update({f'message{i}':comments_text[i]})
+    docx.render(context)
+    docx.save(f"documents/{ticket_id}_comments.docx")
+
+    remove(f"documents/{ticket_id}_comments_template.docx")
+    file = open(f"documents/{ticket_id}_comments.docx", 'rb')
+    logger.info("Docx generated!")
+    return file
+
 
 def make_html_file(json_path):
     #тестовые авы

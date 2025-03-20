@@ -3,6 +3,7 @@ import config
 import urllib3
 import json
 
+import cairosvg
 from bs4 import BeautifulSoup
 from utils.filesAPI import read_schedule
 from loguru import logger
@@ -27,8 +28,8 @@ def fromate_to_ticket(response):
         tickets.append(Ticket(id,summary,SLA_time))
     return tickets
 
-def get_tickets(name):
-    url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=Assignee: {name} State: -Closed'
+def get_tickets(name, url = ""):
+    if url == "" : url = f'https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=Assignee: {name} State: -Closed'
     logger.info(f"Making request to get tickets: {url}")
     url_headers = {
         'Accept': 'application/json',
@@ -130,17 +131,41 @@ def get_contents_of_messages(ticket_id, internal_visibility = False):
     logger.info(f"Get messages from ticket {ticket_id} : {len(json_data['activities'])}")
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
+    avatars = {}
     for i in range(len(json_data['activities'])-1):
         author = json_data['activities'][i]['author']['email']
+        author_avatar_url = json_data['activities'][i]['author']['avatarUrl']
         soup = BeautifulSoup(json_data['activities'][i]['added'][0]['text'], 'html.parser')
         text = soup.get_text(separator='\n', strip=True).split("##- Please enter your reply above this line -##")[0]
         visibility = json_data['activities'][i]['added'][0]['visibility']['$type']
         if author != None:
             if visibility != "LimitedVisibility" or internal_visibility:
                 comments.update({i : {author : text}})
+            avatars.update({author: __get_avatar(author, author_avatar_url)})
     resulted_json.update({"comments" : comments})
+    resulted_json.update({"avatars" : avatars})
     file_path = f"comments_files/{ticket_id}_comments.json"
     with open(file_path, 'w', encoding='utf-8') as file:
         json.dump(resulted_json,file,ensure_ascii=False,indent=4)
     logger.info(f'Json file saved as comments_files/{ticket_id}_comments.json')
     return file_path
+
+def __get_avatar(author_name,avaratar_url):
+    path_to_avatar = f"users_avatars/{author_name}_avatar.png"
+    url = f"https://tracker.ntechlab.com{avaratar_url}"
+    url_headers = {
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        f'Authorization': f'Bearer {config.token}',
+        'Content-Type': 'multipart/form-data'
+    }
+    request = requests.get(url,headers=url_headers, verify=False)
+    if request.status_code != 200:
+        logger.error(f"Failed to download photo! Status code: {request.status_code}")
+        return
+    if request.headers.get("content-type") == "image/svg+xml":
+        file = cairosvg.svg2png(bytestring=request.content, write_to=path_to_avatar)
+    else:
+        with open(path_to_avatar, 'wb') as file:
+            file.write(request.content)
+    return path_to_avatar
+    
