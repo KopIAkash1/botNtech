@@ -132,8 +132,10 @@ def get_contents_of_messages(ticket_id, internal_visibility = False):
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
     avatars = {}
+    reporter = json_data['activities'][len(json_data['activities'])-1]['author']['email']
     body = BeautifulSoup(json_data['activities'][len(json_data['activities'])-1]['issue']['description'], 'html.parser').get_text(separator='\n', strip=True)
     status = json_data['activities'][len(json_data['activities'])-1]['issue']['customFields'][3]['value']['name']
+    resulted_json.update({'reporter' : reporter})
     resulted_json.update({'body': body})
     resulted_json.update({'status' : status})
     for i in range(len(json_data['activities'])-1):
