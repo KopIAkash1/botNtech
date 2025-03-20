@@ -2,6 +2,7 @@ import config
 import utils.db as db
 import utils.ticketsAPI as ticketsAPI
 
+from utils.filesAPI import make_html_file
 from utils.utils import check_author_and_format, callbacks, cancel
 from telebot import types
 from loguru import logger
@@ -117,6 +118,28 @@ def init_tickets_managment_commands(bot):
         file = open(json_path, 'rb')
         bot.send_document(message.chat.id, file)
         file.close()
+
+    #TODO: Заменить лямбду на другую, которая будет чекать по бд людей с доступом, а не по конфигу 
+    @bot.message_handler(commands=['get_comments_html'], func= lambda message: check_author_and_format(message))
+    def get_comments_html(message):
+        if len(str(message.text).split(" ")) != 2:
+            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_html SUP-18000`")
+            return
+        number = str(message.text).split(" ")[1]
+        json_path = ticketsAPI.get_contents_of_messages(number)
+        if not(json_path):
+            bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка")
+            return
+        try:
+            html_path = make_html_file(json_path)
+            file = open(html_path, 'rb')
+            bot.send_document(message.chat.id, file)
+            file.close()
+        except Exception as e:
+            logger.error(e)
+            return
+        
+        
     
     @bot.message_handler(commands=['tickets_count'], func= lambda message : check_author_and_format(message))
     def get_tickets_count(message):
