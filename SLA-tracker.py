@@ -38,11 +38,12 @@ def polling():
     global switch_completed
     while True:
         get_known_tickets()
+        request_url_for_sla = '''https://tracker.ntechlab.com/api/issues?fields=id,idReadable,summary,fields(value),description&query=State: {Waiting for support},{Waiting for L2}%20%20 State: -Closed, -Resolved Project: {Support | Служба поддержки}%20'''
         current_user, _ = filesAPI.read_schedule()
         logger.info(f"Current user for check is: {current_user}")
-        response = ticketAPI.get_tickets(current_user)
+        response = ticketAPI.get_tickets(current_user, request_url_for_sla)
         tickets = ticketAPI.fromate_to_ticket(response)
-        logger.info(f"Get {len(tickets)} for user {current_user}")
+        logger.info(f"Get {len(tickets)} tickets")
         send_SLA_break_message(tickets, current_user)
         time.sleep(600)
 
