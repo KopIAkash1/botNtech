@@ -126,12 +126,12 @@ def init_tickets_managment_commands(bot):
             bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_html SUP-18000`")
             return
         number = str(message.text).split(" ")[1]
-        if message.from_user.username not in config.users: pass
+        if message.from_user.username in config.users: pass
         elif db.is_user_exist(message.from_user.username.lower()): 
             try:
                 tickets = db.get_tickets_by_user(message.from_user.username.lower())
                 tickets = tickets.split(" ")
-                if number in tickets: pass
+                if number.upper() in tickets: pass
                 else: 
                     bot.send_message(message.chat.id, "Нет доступа к тикету")
                     return
