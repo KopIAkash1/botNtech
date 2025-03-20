@@ -111,6 +111,7 @@ def spam_ticket(ticket_id):
 
 #TODO: укоротить реквест
 def get_ticket_content(ticket_id):
+    jsons = []
     logger.info(f"Making request to get info about {ticket_id}")
     url = f"https://tracker.ntechlab.com/api/issues/{ticket_id}/activitiesPage?categories=IssueCreatedCategory,CommentsCategory&reverse=true&fields=activities(category(id()),added(id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),localizedName,numberInProject,project(name,shortName),author(ringId,avatarUrl,canReadProfile,isLocked,login,name,id,email,isEmailVerified,guest,fullName,online,banned,banBadge,userType(id)),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id),resolved,idReadable,summary,mentionedUsers(%40author),mentionedIssues(id,reporter(%40author),resolved,updated,created,unauthenticatedReporter,fields(value(id,minutes,presentation,name,description,localizedName,isResolved,color(%40color),buildIntegration,buildLink,text,issueRelatedGroup(%40issueRelatedGroup),ringId,login,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),allUsersGroup,icon,teamForProject(name,shortName)),id,$type,hasStateMachine,isUpdatable,projectCustomField($type,id,field(id,name,ordinal,aliases,localizedName,fieldType(id,presentation,isBundleType,valueType,isMultiValue)),bundle(id,$type),canBeEmpty,emptyFieldText,hasRunningJob,ordinal,isSpentTime,isPublic),searchResults(id,textSearchResult(highlightRanges(%40highlightRanges),textRange(%40highlightRanges))),pausedTime),project(%40project),visibility(%40visibility),tags(%40tags),votes,voters(hasVote),watchers(hasStar),usersTyping(timestamp,user(%40value1)),canUndoComment,idReadable,summary),mentionedArticles(id,idReadable,reporter(%40value1),summary,project(%40project),parentArticle(idReadable),ordinal,visibility(%40visibility),hasUnpublishedChanges,hasChildren,tags(%40tags)),creator(%40value1),text,type(%40value),duration(minutes,presentation),textPreview,date,usesMarkdown,attributes(id,name,value(%40value)),files,commands(errorText,hasError,start,end),noHubUserReason($type,id),noUserReason($type,id),pullRequest($type,author(%40value1),date,fetched,processor(id,$type),files,id,branch,idExternal,noHubUserReason($type,id),noUserReason($type,id),title,text,url),urls,processors(id,$type),state($type,id()),version,deleted,pinned,attachments(id,name,author(%40author1),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id)),reactions(id,reaction,author(%40value1)),reactionOrder,hasEmail,canUpdateVisibility,suspiciousEmail,issue(id,project(id)),markdownEmbeddings(key,settings,widget(id)),reaction,profileUrl,membership(id,name,avatarUrl,__entityId),unverifiedEmail,isReporter,isAgent,presentation),removed(id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id),localizedName,numberInProject,project(name,shortName),author(%40author1),created,updated,mimeType,url,size,visibility(%40visibility),imageDimensions(width,height),thumbnailURL,recognizedText,searchResults(%40searchResults),comment(%40comment),embeddedIntoDocument(id),embeddedIntoComments(id),resolved,idReadable,summary,presentation),issue(description,customFields(name,projectCustomField(emptyFieldText,field(id,localizedName,name,fieldType(%40fieldType))),value(%40value1))),id,author(%40author),authorGroup(ringId),timestamp,field(id,presentation,customField(fieldType(%40fieldType))),target(id,$type),targetMember,type,pseudo,emptyFieldText),hasBefore,hasAfter,beforeCursor,afterCursor,cursor%3B%40comment%3Aid,visibility(%40visibility)%3B%40visibility%3A$type,implicitPermittedUsers(%40value1),permittedGroups(%40issueRelatedGroup),permittedUsers(%40value1)%3B%40project%3Aid,ringId,name,shortName,iconUrl,template,pinned,archived,isDemo,organization(),hasArticles,team(%40issueRelatedGroup),fieldsSorted,restricted,plugins(timeTrackingSettings(id,enabled),helpDeskSettings(id,enabled,defaultForm(uuid,title)),vcsIntegrationSettings(hasVcsIntegrations),grazie(disabled))%3B%40author%3AissueRelatedGroup(%40issueRelatedGroup),id,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id)%3B%40value%3Aid,name,autoAttach,description,hasRunningJobs,color(%40color),attributes(id,timeTrackingSettings(id,project(id)))%3B%40value1%3Aid,ringId,login,name,email,isEmailVerified,guest,fullName,avatarUrl,online,banned,banBadge,canReadProfile,isLocked,userType(id)%3B%40issueRelatedGroup%3Aid,name,ringId,allUsersGroup,icon,teamForProject(name,shortName)%3B%40searchResults%3AtextSearchResult(highlightRanges(%40highlightRanges))%3B%40author1%3AringId,avatarUrl,canReadProfile,isLocked,login,name%3B%40tags%3Aid,name,color(%40color)%3B%40color%3Aid,background,foreground%3B%40fieldType%3AvalueType,isMultiValue%3B%40highlightRanges%3AstartOffset,endOffset"
     url_headers = {
@@ -119,35 +120,52 @@ def get_ticket_content(ticket_id):
         'Content-Type': 'application/json'
     }
     response = requests.get(url=url, headers=url_headers, verify=False)
-    logger.info(f"Get response {response.status_code}")
-    return response
+    json_data = response.json()
+    jsons.append(json_data)
+    while True:
+        is_next_page = json_data['hasBefore']
+        if is_next_page == False:
+            break
+        next_url = url.replace('true&fields', f'true&cursor={json_data['beforeCursor'].replace("+","%2B").replace(":","%3A")}&fields')
+        response = requests.get(url=next_url, headers=url_headers, verify=False)
+        json_data = response.json()
+        jsons.append(json_data)
+    logger.info(f"Get responses {len(jsons)}")
+    return jsons
 
 #TODO: split полумера. Можно подумать о более качественном форматировании
 def get_contents_of_messages(ticket_id, internal_visibility = False):
-    response = get_ticket_content(ticket_id)
-    if response.status_code != 200: 
-        return False
-    json_data = response.json()
-    logger.info(f"Get messages from ticket {ticket_id} : {len(json_data['activities'])}")
+    json_data = get_ticket_content(ticket_id)
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
     avatars = {}
-    reporter = json_data['activities'][len(json_data['activities'])-1]['author']['email']
-    body = BeautifulSoup(json_data['activities'][len(json_data['activities'])-1]['issue']['description'], 'html.parser').get_text(separator='\n', strip=True)
-    status = json_data['activities'][len(json_data['activities'])-1]['issue']['customFields'][3]['value']['name']
+    reporter = json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['author']['email']
+    body = BeautifulSoup(json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['issue']['description'], 'html.parser').get_text(separator='\n', strip=True)
+    status = ''
+    #status = json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['issue']['customFields'][3]['value']['name']
+    for field in json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['issue']['customFields']:
+        try:
+            if field['value']['$type'] == "StateBundleElement" : 
+                status = field['value']['name']
+                break
+        except:
+            pass
     resulted_json.update({'reporter' : reporter})
     resulted_json.update({'body': body})
     resulted_json.update({'status' : status})
-    for i in range(len(json_data['activities'])-1):
-        author = json_data['activities'][i]['author']['email']
-        author_avatar_url = json_data['activities'][i]['author']['avatarUrl']
-        soup = BeautifulSoup(json_data['activities'][i]['added'][0]['text'], 'html.parser')
-        text = soup.get_text(separator='\n', strip=True).split("##- Please enter your reply above this line -##")[0]
-        visibility = json_data['activities'][i]['added'][0]['visibility']['$type']
-        if author != None:
-            if visibility != "LimitedVisibility" or internal_visibility:
-                comments.update({i : {author : text}})
-            avatars.update({author: __get_avatar(author, author_avatar_url)})
+    message_index = 0
+    for json_list in json_data:
+        for i in range(len(json_list['activities'])-1):
+            author = json_list['activities'][i]['author']['email']
+            author_avatar_url = json_list['activities'][i]['author']['avatarUrl']
+            soup = BeautifulSoup(json_list['activities'][i]['added'][0]['text'], 'html.parser')
+            text = soup.get_text(separator='\n', strip=True).split("##- Please enter your reply above this line -##")[0]
+            visibility = json_list['activities'][i]['added'][0]['visibility']['$type']
+            if author != None:
+                if visibility != "LimitedVisibility" or internal_visibility:
+                    comments.update({message_index : {author : text}})
+                    message_index += 1
+                avatars.update({author: __get_avatar(author, author_avatar_url)})
     resulted_json.update({"comments" : comments})
     resulted_json.update({"avatars" : avatars})
     file_path = f"comments_files/{ticket_id}_comments.json"
