@@ -152,13 +152,20 @@ def make_html_file(json_path):
         else: message = f'<div class="message receiver"><p class="chatter"><img src="{image_customer}">Customer | {user}</p><p><br>' + message + "</p></div>"
         result += message
 
+    body = data['body']
+    body = body.replace("\n", "<br>")
+    code_blocks = re.findall(r'```(.*?)```', body, re.DOTALL)
+
+    for code in code_blocks:
+            body = body.replace(f'```{code}```', f'<pre class="code_block"><code>{code}</code></pre>')
+    body = f'<p><p class="chatter"><img src="{image_customer}"/>Customer | {data['reporter']}</p><p>' + body + '</p></p>'
     soup =  BeautifulSoup(f'''<!DOCTYPE html>
     <html lang="ru">
      <head>
       <meta charset="utf-8"/>
       <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
       <title>
-       {data['ticket_id']}
+       {data['ticket_id'].upper()}
       </title>
       <style>
        body {{
@@ -193,6 +200,11 @@ def make_html_file(json_path):
         .message p {{
             margin: 0;
         }}
+        .message.body {{
+            margin: auto;
+            padding: 10px;
+            max-width: 900px;
+        }}
         .code_block {{
             white-space: pre-wrap;
             background-color: #201f1f;
@@ -219,9 +231,16 @@ def make_html_file(json_path):
             object-fit: cover;
             overflow: hidden;
         }}
+        .status {{
+            color: #76ff5a;
+        }}
       </style>
      </head>
      <body>
+        <div class="message body">
+            {body}
+            <h1 class="status">STATUS: {data['status']}</h1>
+        </div>
         <div class="chat-container" id="chat">
             {result}
         </div>
