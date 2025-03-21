@@ -197,12 +197,13 @@ def init_tickets_managment_commands(bot):
                 bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}")
         except Exception as e: print(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
 
-        @bot.message_handler(commands=["start"])
-        def start(message):
-            if "assignee" in message.text:
-                assigne_to_user(message)
-            elif "spam" in message.text:
-                logger.info("Sending spam request")
-                ticket_id = message.text.split("_")[1]
-                ticketsAPI.spam_ticket(ticket_id)
-                bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
+    @bot.message_handler(commands=["start"])
+    def start(message):
+        if "assignee" in message.text:
+            logger.info(f"Get assignee command from {message.from_user.username}")
+            assigne_to_user(message)
+        elif "spam" in message.text:
+            logger.info("Sending spam request")
+            ticket_id = message.text.split("_")[1]
+            ticketsAPI.spam_ticket(ticket_id)
+            bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
