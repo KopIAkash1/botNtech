@@ -53,4 +53,4 @@ if __name__ == "__main__":
     logger.info(f"Bot started {bot.get_my_name()}")
     schedule_thread = Thread(target=schedule_message)
     schedule_thread.start()
-    bot.polling()
+    bot.infinity_polling(none_stop=True)
