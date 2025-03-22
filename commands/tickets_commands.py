@@ -183,9 +183,9 @@ def init_tickets_managment_commands(bot):
                         assignee_from_group = True
                         logger.info(f"Assignee from {current_user} to {next_user}")
                     else:
-                        print(f"Already assigned")
+                        logger.info(f"Already assigned")
                 else:
-                    print("User are not allowed to assignee")
+                    logger.info("User are not allowed to assignee")
             elif len(message.text.split(" ")) == 2:
                 next_user = message.text.split(" ")[1]
                 name = ticketsAPI.assigne_to_next(next_user_param=next_user)
@@ -195,7 +195,7 @@ def init_tickets_managment_commands(bot):
                 next_user = message.text.split(" ")[2]
                 name = ticketsAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
                 bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}", reply_to_message_id = message.id)
-        except Exception as e: print(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
+        except Exception as e: logger.info(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
 
         @bot.message_handler(commands=["start"])
         def start(message):
