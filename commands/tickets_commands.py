@@ -108,7 +108,7 @@ def init_tickets_managment_commands(bot):
     def get_comments_json(message):
         #TODO: если у пользователя есть права
         if len(str(message.text).split(" ")) != 2:
-            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например /get_comments_json SUP-18000")
+            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например /get_comments_json SUP-18000", reply_to_message_id=message.id)
             return
         number = str(message.text).split(" ")[1]
         json_path = ticketsAPI.get_contents_of_messages(number)
@@ -123,7 +123,7 @@ def init_tickets_managment_commands(bot):
     @bot.message_handler(commands=['get_comments_html'])
     def get_comments_html(message):
         if len(str(message.text).split(" ")) != 2:
-            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_html SUP-18000`")
+            bot.send_message(message.chat.id, "Необходимо указать id тикета. Например `/get_comments_html SUP-18000`" ,reply_to_message_id = message.id)
             return
         number = str(message.text).split(" ")[1]
         if message.from_user.username in config.users: pass
@@ -133,7 +133,7 @@ def init_tickets_managment_commands(bot):
                 tickets = tickets.split(" ")
                 if number.upper() in tickets: pass
                 else: 
-                    bot.send_message(message.chat.id, "Нет доступа к тикету")
+                    bot.send_message(message.chat.id, "Нет доступа к тикету", reply_to_message_id=message.id)
                     return
             except Exception as e:
                 logger.error(e)
@@ -142,12 +142,12 @@ def init_tickets_managment_commands(bot):
             return
         json_path = ticketsAPI.get_contents_of_messages(number)
         if not(json_path):
-            bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка")
+            bot.send_message(message.chat.id, "Тикет с данным номером найти не удалось или возникла ошибка", reply_to_message_id=message.id)
             return
         try:
             html_path = make_html_file(json_path)
             file = open(html_path, 'rb')
-            bot.send_document(message.chat.id, file)
+            bot.send_document(message.chat.id, file, reply_to_message_id=message.id)
             file.close()
         except Exception as e:
             logger.error(e)
@@ -162,7 +162,7 @@ def init_tickets_managment_commands(bot):
             current_user, _ = ticketsAPI.read_schedule()
             tickets = ticketsAPI.get_tickets(current_user)
             logger.info(f"Get {len(tickets)} tickets")
-            bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов")
+            bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов", reply_to_message_id = message.id)
         except Exception as e:
             logger.error(f"Something gone wrong with error: {e}")
 
@@ -172,14 +172,14 @@ def init_tickets_managment_commands(bot):
         logger.info(f"Started assignee func by {message.from_user.username}")
         message.text = message.text.replace("start ","")    
         try: 
-            print(len(str(message.text).split(" ")))
             current_user, next_user = ticketsAPI.read_schedule()
-            print(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user} and next user is {next_user}")
+            logger.info(f"Message get from @{message.from_user.username} and current_user by schedule is {current_user} and next user is {next_user}")
             if message.text == "/assignee":
                 if f"@{message.from_user.username}" == config.user_tg[current_user] or f"@{message.from_user.username}" == config.user_tg[next_user]:
                     if not(assignee_from_group):
+                        logger.info("Starting assignee by schedule...")
                         name = ticketsAPI.assigne_to_next()
-                        bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}")
+                        bot.send_message(message.chat.id, f"🖊️Переназначение на основе расписания🖊️\nНазначено: {name}", reply_to_message_id = message.id)
                         assignee_from_group = True
                         logger.info(f"Assignee from {current_user} to {next_user}")
                     else:
@@ -189,12 +189,12 @@ def init_tickets_managment_commands(bot):
             elif len(message.text.split(" ")) == 2:
                 next_user = message.text.split(" ")[1]
                 name = ticketsAPI.assigne_to_next(next_user_param=next_user)
-                bot.send_message(message.chat.id, f"📎Переназначение на конкретного пользователя📎\nНазначено:{name}")
+                bot.send_message(message.chat.id, f"📎Переназначение на конкретного пользователя📎\nНазначено:{name}", reply_to_message_id = message.id)
             elif len(message.text.split(" ")) == 3:
                 old_user = message.text.split(" ")[1]
                 next_user = message.text.split(" ")[2]
                 name = ticketsAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
-                bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}")
+                bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}", reply_to_message_id = message.id)
         except Exception as e: print(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
 
         @bot.message_handler(commands=["start"])
@@ -205,4 +205,4 @@ def init_tickets_managment_commands(bot):
                 logger.info("Sending spam request")
                 ticket_id = message.text.split("_")[1]
                 ticketsAPI.spam_ticket(ticket_id)
-                bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам")
+                bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам", reply_to_message_id = message.id)
