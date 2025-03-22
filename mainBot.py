@@ -11,7 +11,6 @@ from loguru import logger
 from commands import callback_handlers, test_commands, tickets_commands, files_commands
 
 bot = telebot.TeleBot(config.api)
-assignee_from_group = False
 type_of_docs = 0
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning) # and is_tagging(message)
 

@@ -7,6 +7,8 @@ from utils.utils import check_author_and_format, callbacks, cancel
 from telebot import types
 from loguru import logger
 
+assignee_from_group = False
+
 def init_manage_access_command(bot):
     #Небольшое исключение изза register_next_step_handler
     @bot.callback_query_handler(lambda call: call.data in callbacks['manage_access'])
