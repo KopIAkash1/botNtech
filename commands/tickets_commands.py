@@ -167,6 +167,25 @@ def init_tickets_managment_commands(bot):
             bot.send_message(message.chat.id, f"На данный момент на первой линии всего {len(tickets)} тикетов", reply_to_message_id = message.id)
         except Exception as e:
             logger.error(f"Something gone wrong with error: {e}")
+    
+    @bot.message_handler(commands=["tickets_list"])
+    def get_tickets_list(message):
+        target_user = ''
+        if len(message.text.split(" ")) == 2:
+            target_user = config.tg_user[message.text.split(" ")[1]]
+        try: 
+            logger.info("Getting tickets list...")
+            if target_user == '': target_user, _ = ticketsAPI.read_schedule()
+            tickets = ticketsAPI.fromate_to_ticket(ticketsAPI.get_tickets(target_user))
+            logger.info(f"Get {len(tickets)} tickets")
+            text = ''
+            for ticket in tickets:
+                id = ticket.id
+                context = ticket.context
+                text += f'{id} - {context}\n'
+            bot.send_message(message.chat.id, text, reply_to_message_id=message.id)
+        except Exception as e:
+            logger.error(f"Something gone wrong with error: {e}")
 
     @bot.message_handler(commands=["assignee"], func=lambda message: check_author_and_format(message))
     def assigne_to_user(message):
@@ -208,3 +227,5 @@ def init_tickets_managment_commands(bot):
             ticket_id = message.text.split("_")[1]
             ticketsAPI.spam_ticket(ticket_id)
             bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам", reply_to_message_id = message.id)
+
+    
