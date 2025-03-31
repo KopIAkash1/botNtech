@@ -83,6 +83,13 @@ def make_docx_file(message, type_of_docs, bot) -> str:
     logger.info(f"File \'{file_name_and_path}\' created and saved")
     file = open(file_name_and_path, "rb")
     bot.send_document(message.chat.id, file)
+    match type_of_docs:
+        case "1":
+            bot.send_message(message.chat.id, f"`Мониторинг проверен и работает корректно, ошибок не обнаружено`", parse_mode="MARKDOWN", reply_to_message_id=message.id)
+        case "2":
+            bot.send_message(message.chat.id, f"`Резервные копии по модулям «Модуль ВидеоДетектор», «Модуль Ускоритель», «Модуль Бигдата», «Модуль Бигдата+» выполнились корректно. Все задания (агенты) активны и запущены`",parse_mode="MARKDOWN", reply_to_message_id=message.id)
+        case "3":
+            bot.send_message(message.chat.id, f"`Расширение хранилища не требуется`", parse_mode="MARKDOWN", reply_to_message_id=message.id)
     logger.info(f"File sended to {message.from_user.username}")
     file.close()
 
