@@ -165,7 +165,7 @@ def make_html_file(json_path):
 
     for code in code_blocks:
             body = body.replace(f'```{code}```', f'<pre class="code_block"><code>{code}</code></pre>')
-    body = f'<p><p class="chatter"><img src="{image_customer}"/>Customer | {data['reporter']}</p><p>' + body + '</p></p>'
+    body = f"<p><p class='chatter'><img src='{image_customer}'/>Customer | {data['reporter']}</p><p>' + body + '</p></p>"
     soup =  BeautifulSoup(f'''<!DOCTYPE html>
     <html lang="ru">
      <head>
