@@ -126,7 +126,7 @@ def get_ticket_content(ticket_id):
         is_next_page = json_data['hasBefore']
         if is_next_page == False:
             break
-        next_url = url.replace('true&fields', f'true&cursor={json_data['beforeCursor'].replace("+","%2B").replace(":","%3A")}&fields')
+        next_url = url.replace('true&fields', f"true&cursor={json_data['beforeCursor'].replace('+','%2B').replace(':','%3A')}&fields")
         response = requests.get(url=next_url, headers=url_headers, verify=False)
         json_data = response.json()
         jsons.append(json_data)
