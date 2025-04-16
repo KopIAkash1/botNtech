@@ -223,9 +223,12 @@ def init_tickets_managment_commands(bot):
         if "assignee" in message.text:
             assigne_to_user(message)
         elif "spam" in message.text:
-            logger.info("Sending spam request")
             ticket_id = message.text.split("_")[1]
-            ticketsAPI.spam_ticket(ticket_id)
-            bot.send_message(message.chat.id, f"Тикет {ticket_id} помечен как спам", reply_to_message_id = message.id)
+            button1 = types.InlineKeyboardButton("Да", callback_data=f"spam {ticket_id}")
+            button2 = types.InlineKeyboardButton("Нет", callback_data=f"not spam {ticket_id}")
+            markup = types.InlineKeyboardMarkup()
+            markup.add(button1)
+            markup.add(button2)
+            bot.send_message(message.chat.id, f"Вы уверены, что хотите пометить тикет {ticket_id} как спам?", reply_markup=markup)
 
     
