@@ -91,8 +91,8 @@ def spam_ticket(ticket_id):
     status, text = send_change_request_ticket(ticket_id, data, "158-10832")
     logger.info(f"Send request to customer on ticket: {ticket_id} | {status, text}")
     
-    data = {"id": "517-16752","value": f"Спам"}
-    status, text = send_change_request_ticket(ticket_id, data, "517-16752")
+    data = {"id": "517-17876","value": f"Спам"} # old 517-16752
+    status, text = send_change_request_ticket(ticket_id, data, "517-17876")
     logger.info(f"Send request to solution on ticket: {ticket_id} | {status, text}")
 
     data = {"id": "158-10166","value": [{"description": None,"id": "166-796","kind": "enum","label": "Spam","name": "Spam"}]}
