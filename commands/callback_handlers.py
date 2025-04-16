@@ -35,6 +35,10 @@ def init_all_callback_handlers(bot):
     def spam_callback_handler(call):
         try:
             if "SUP" in call.data:
+                if "not spam" in call.data:
+                    bot.edit_message_text(chat_id=call.message.chat.id, text=f"Процедура отмена", message_id=call.message.message_id)
+                    bot.answer_callback_query(call.id)
+                    return
                 logger.info("Sending spam request")
                 ticket_id = str(call.data).split(" ")[1]
                 ticketsAPI.spam_ticket(ticket_id)
