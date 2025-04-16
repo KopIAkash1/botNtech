@@ -43,30 +43,34 @@ def get_page():
 
 
 def get_ticket_info(json):
-    id = json[0]['idReadable']
-    summary = json[0]['summary']
-    desc = json[0]['description']
-    url = f"https://tracker.ntechlab.com/tickets/{id}"
-    return Ticket(id=id, title=summary, context=desc, url=url)
+    ticketMass = []
+    for ticket in json:
+        id = ticket['idReadable']
+        summary = ticket['summary']
+        desc = ticket['description']
+        url = f"https://tracker.ntechlab.com/tickets/{id}"
+        ticketMass.append(Ticket(id=id, title=summary, context=desc, url=url))
+    return ticketMass
 
 def polling(settings):
     print("POLLING STARTED")
     while True:
         answer = get_page()
         if len(answer) > 0:
-            ticket = get_ticket_info(answer)
+            tickets = get_ticket_info(answer)
             #no_reply
-            if settings.no_reply:
-                if ticket.id not in known_tickets: known_tickets.append(ticket.id)
-                else: continue
-            #full_message
-            if settings.full_message:
-                send_message(f'''🟢Новый тикет🟢 \
-                \n{ticket.id}\
-                \nНазвание: {ticket.title}\
-                \n{ticket.url}''',settings, ticket)
-            else:
-                send_message("🟢Новый тикет🟢",settings, ticket)
+            for ticket in tickets:
+                if settings.no_reply:
+                    if ticket.id not in known_tickets: known_tickets.append(ticket.id)
+                    else: continue
+                #full_message
+                if settings.full_message:
+                    send_message(f'''🟢Новый тикет🟢 \
+                    \n{ticket.id}\
+                    \nНазвание: {ticket.title}\
+                    \n{ticket.url}''',settings, ticket)
+                else:
+                    send_message("🟢Новый тикет🟢",settings, ticket)
         time.sleep(settings.reply_time)
 
 def send_message(msg, settings, ticket):
