@@ -1,4 +1,5 @@
 import utils.filesAPI as fileAPI
+import utils.ticketsAPI as ticketsAPI
 
 from utils.utils import callbacks, cancel
 from telebot import types
@@ -28,6 +29,19 @@ def init_all_callback_handlers(bot):
             bot.answer_callback_query(call.id)
         except Exception as e:
             logger.error(f"Making docs stoped with error {e}") 
+
+
+    @bot.callback_query_handler(lambda call: "spam" in call.data)
+    def spam_callback_handler(call):
+        try:
+            if "SUP" in call.data:
+                logger.info("Sending spam request")
+                ticket_id = str(call.data).split(" ")[1]
+                ticketsAPI.spam_ticket(ticket_id)
+                bot.edit_message_text(chat_id=call.message.chat.id, text=f'Тикет {ticket_id} помечен как спам', message_id=call.message.message_id)
+                bot.answer_callback_query(call.id)
+        except Exception as e:
+            logger.error(f"Getting error in spam logic. Error: {e}")
 
 #Не думаю что будет надобность каждый хендлер оп отдельности регать, но если вдруг надо,
 #то понасоздавать тут инит функции с коллбеками и в мейн файле инициализировать 
