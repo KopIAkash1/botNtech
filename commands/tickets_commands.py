@@ -226,7 +226,7 @@ def init_tickets_managment_commands(bot):
         if len(params) == 3:
             ticket_id = params[1]
             seconds = int(datetime.now().timestamp()) + int(params[2])
-            data = {"id": "158-10165","event": {"id": "resolved"}}
+            data = {"id": "158-10165","event": {"id": "waiting for customer"}}
             ticketsAPI.send_change_request_ticket(ticket_id=ticket_id, data=data, field="158-10165")
             db.set_ticket_remind_time(ticket_id, seconds)
             logger.info(f"Ticket {ticket_id} successfully added to remind at {seconds}")
