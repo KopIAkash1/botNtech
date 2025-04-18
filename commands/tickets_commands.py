@@ -6,6 +6,7 @@ from utils.filesAPI import make_html_file
 from utils.utils import check_author_and_format, callbacks, cancel
 from telebot import types
 from loguru import logger
+from datetime import datetime
 
 assignee_from_group = False
 
@@ -217,6 +218,44 @@ def init_tickets_managment_commands(bot):
                 name = ticketsAPI.assigne_to_next(old_user_param=old_user, next_user_param=next_user)
                 bot.send_message(message.chat.id, f"🤝Переназначение с одного на другого пользователя🤝\nТикеты с {old_user}\nНазначены на {next_user}", reply_to_message_id = message.id)
         except Exception as e: logger.info(F"WARNING | Get exception in message. Message: {message.text}\n{e}")
+
+    @bot.message_handler(commands=["remind"])
+    def remind_command(message):
+        params = message.text.split(" ")
+        logger.info("Starting remind method")
+        if len(params) == 3:
+            ticket_id = params[1]
+            seconds = int(datetime.now().timestamp()) + int(params[2])
+            data = {"id": "158-10165","event": {"id": "resolved"}}
+            ticketsAPI.send_change_request_ticket(ticket_id=ticket_id, data=data, field="158-10165")
+            db.set_ticket_remind_time(ticket_id, seconds)
+            logger.info(f"Ticket {ticket_id} successfully added to remind at {seconds}")
+            bot.send_message(message.chat.id, f"Тикет {ticket_id} добавлен в ожидание до {datetime.fromtimestamp(seconds)}", reply_to_message_id = message.id)
+        else:
+            bot.send_message(message.chat.id, "/remind <Ticket-Id> <seconds>", reply_to_message_id = message.id)
+
+    @bot.message_handler(commands=["get_remind_ticket"])
+    def get_remind_ticket_command(message):
+        logger.debug(f"ADMIN TOOL | get_remind_ticket info used by {message.from_user.username}")
+        ticket_id = message.text.split(" ")[1]
+        answer = db.get_ticket_remind_time(ticket_id)
+        if not answer: 
+            bot.send_message(message.chat.id, f"Не удалось найти отложенный тикет с айди {ticket_id}", reply_to_message_id = message.id)
+            return
+        bot.send_message(message.chat.id, f"{answer[0]} {datetime.fromtimestamp(answer[1])}", reply_to_message_id = message.id)
+
+    @bot.message_handler(commands=["remove_remind_ticket"])
+    def remove_remind_ticket_command(message):
+        logger.debug(f"ADMIN TOOL | remove_remind_ticket info used by {message.from_user.username}")
+        ticket_id = message.text.split(" ")[1]
+        answer = db.__remove_remind_ticket(ticket_id)
+        logger.debug(f"Trying to delete ticket with id {ticket_id}...")
+        if answer:
+            logger.debug(f"Deleted successefully")
+            bot.send_message(message.chat.id, f"{ticket_id} удален из напоминаний", reply_to_message_id = message.id)
+        else:
+            logger.warning(f"Deleted failed")
+            bot.send_message(message.chat.id, f"{ticket_id} найти не удалось или он уже удален", reply_to_message_id = message.id)
 
     @bot.message_handler(commands=["start"])
     def start(message):
