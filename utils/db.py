@@ -4,6 +4,9 @@ from loguru import logger
 db = sqlite3.connect("allowed_to_tickets.db", check_same_thread=False)
 cursor = db.cursor()
 
+remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False, timeout = 20.0)
+cursorRemindDB = remindDB.cursor()
+
 #Функцию вызывать с параметрами add_tickets_to_user(user, tickets="")
 def set_tickets_to_user(user, tickets):
     if not is_user_exist(user): __set_user(user, tickets)
@@ -25,16 +28,24 @@ def is_user_exist(user) -> bool:
     return cursor.fetchone() is not None
 
 def set_ticket_remind_time(ticket_id, time):
-    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
-    cursorRemindDB = remindDB.cursor()
     cursorRemindDB.execute("INSERT INTO tickets (TicketId, timestampRemindTime) VALUES (?,?)", (ticket_id.lower(), time))
     remindDB.commit()
 
 def get_ticket_remind_time(ticket_id):
-    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
-    cursorRemindDB = remindDB.cursor()
     cursorRemindDB.execute("SELECT TicketId, timestampRemindTime FROM tickets WHERE TicketId = ?", (ticket_id.lower(),))
     return cursorRemindDB.fetchone()
+
+def get_all_remind_tickets():
+    tickets = cursorRemindDB.execute("SELECT * FROM tickets")
+    return tickets.fetchall()
+
+
+def remove_remind_ticket(ticket_id) -> bool:
+    answer = get_ticket_remind_time(ticket_id)
+    if not answer: return False
+    cursorRemindDB.execute("DELETE FROM tickets WHERE TicketId = ?", (ticket_id.lower(),))
+    remindDB.commit()
+    return True
 
 #__*****() ИЗВНЕ НЕ ВЫЗЫВАТЬ!!!
 
@@ -70,12 +81,3 @@ def _rem_tickets(user, tickets):
     old_tickets = " ".join(list(dict.fromkeys(old_tickets)))
     cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (old_tickets.strip(), user.lower(),))
     db.commit()
-
-def __remove_remind_ticket(ticket_id) -> bool:
-    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
-    cursorRemindDB = remindDB.cursor()
-    answer = get_ticket_remind_time(ticket_id)
-    if not answer: return False
-    cursorRemindDB.execute("DELETE FROM tickets WHERE TicketId = ?", (ticket_id.lower(),))
-    remindDB.commit()
-    return True
