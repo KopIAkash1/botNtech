@@ -24,6 +24,17 @@ def is_user_exist(user) -> bool:
     cursor.execute("SELECT TelegramUser FROM users WHERE TelegramUser = ?", (user.lower(),))
     return cursor.fetchone() is not None
 
+def set_ticket_remind_time(ticket_id, time):
+    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
+    cursorRemindDB = remindDB.cursor()
+    cursorRemindDB.execute("INSERT INTO tickets (TicketId, timestampRemindTime) VALUES (?,?)", (ticket_id.lower(), time))
+    remindDB.commit()
+
+def get_ticket_remind_time(ticket_id):
+    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
+    cursorRemindDB = remindDB.cursor()
+    cursorRemindDB.execute("SELECT TicketId, timestampRemindTime FROM tickets WHERE TicketId = ?", (ticket_id.lower(),))
+    return cursorRemindDB.fetchone()
 
 #__*****() ИЗВНЕ НЕ ВЫЗЫВАТЬ!!!
 
@@ -59,3 +70,12 @@ def _rem_tickets(user, tickets):
     old_tickets = " ".join(list(dict.fromkeys(old_tickets)))
     cursor.execute("UPDATE users SET tickets = ? WHERE TelegramUser = ?", (old_tickets.strip(), user.lower(),))
     db.commit()
+
+def __remove_remind_ticket(ticket_id) -> bool:
+    remindDB = sqlite3.connect("remind_tickets.db", check_same_thread=False)
+    cursorRemindDB = remindDB.cursor()
+    answer = get_ticket_remind_time(ticket_id)
+    if not answer: return False
+    cursorRemindDB.execute("DELETE FROM tickets WHERE TicketId = ?", (ticket_id.lower(),))
+    remindDB.commit()
+    return True
