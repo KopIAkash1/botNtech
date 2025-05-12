@@ -3,7 +3,6 @@ import config
 import urllib3
 import json
 
-import cairosvg
 from bs4 import BeautifulSoup
 from utils.filesAPI import read_schedule
 from loguru import logger
@@ -139,6 +138,7 @@ def get_contents_of_messages(ticket_id, internal_visibility = False):
     resulted_json = {"ticket_id" : ticket_id}
     comments = {}
     avatars = {}
+    time = json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['timestamp']
     reporter = json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['author']['email']
     body = BeautifulSoup(json_data[-1]['activities'][len(json_data[-1]['activities'])-1]['issue']['description'], 'html.parser').get_text(separator='\n', strip=True)
     status = ''
@@ -153,19 +153,21 @@ def get_contents_of_messages(ticket_id, internal_visibility = False):
     resulted_json.update({'reporter' : reporter})
     resulted_json.update({'body': body})
     resulted_json.update({'status' : status})
+    resulted_json.update({'timestamp': time})
     message_index = 0
     for json_list in json_data:
         for i in range(len(json_list['activities'])-1):
             author = json_list['activities'][i]['author']['email']
+            time_comment = json_list['activities'][i]['timestamp']
             author_avatar_url = json_list['activities'][i]['author']['avatarUrl']
             soup = BeautifulSoup(json_list['activities'][i]['added'][0]['text'], 'html.parser')
             text = soup.get_text(separator='\n', strip=True).split("##- Please enter your reply above this line -##")[0]
             visibility = json_list['activities'][i]['added'][0]['visibility']['$type']
             if author != None:
                 if visibility != "LimitedVisibility" or internal_visibility:
-                    comments.update({message_index : {author : text}})
+                    comments.update({message_index : {author : text, 'timestamp' : time_comment}})
                     message_index += 1
-                avatars.update({author: __get_avatar(author, author_avatar_url)})
+                #avatars.update({author: __get_avatar(author, author_avatar_url)})
     resulted_json.update({"comments" : comments})
     resulted_json.update({"avatars" : avatars})
     file_path = f"comments_files/{ticket_id}_comments.json"
