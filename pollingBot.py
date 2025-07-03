@@ -1,5 +1,6 @@
 import telebot
 import requests
+import sqlite3
 
 from loguru import logger
 from datetime import datetime
@@ -16,6 +17,29 @@ class Ticket():
         self.title = title
         self.id = id
 
+class db():
+    def __init__(self):
+        self.sqlite = sqlite3.connect("dbs/sqlite.db")
+        self.cursor = self.sqlite.cursor()
+
+    def add_ticket(self, ticket_id, ticket_title):
+        query = f''' \
+        INSERT INTO tickets VALUES(
+                            "{ticket_id}",
+                            "{ticket_title}",
+                            "0")
+                            '''
+        self.cursor.execute(query)
+        self.sqlite.commit()
+
+    def check_ticket(self, ticket_id):
+        self.cursor.execute(f'''
+            SELECT * FROM tickets WHERE ID = "{ticket_id}"
+                            ''')
+        response = self.cursor.fetchall()
+        if(response): return True
+        else: False
+
 def get_page():
     url = 'https://tracker.ntechlab.com/api/issues?fields=idReadable,summary,description&query=project:{Support | Служба поддержки}%20 Assignee: Unassigned State: -Closed, -{Waiting for L2}'
     url_headers = {
@@ -23,7 +47,6 @@ def get_page():
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json'
     }
-    print(type(url_headers))
     request = requests.get(url, headers=url_headers)
     logger.info(f"Request to tickets at {datetime.now()} returned : {request.status_code}")
     return request.json()
@@ -43,7 +66,7 @@ def send_message(text):
     bot.send_message(-1001570787209, text, reply_to_message_id=172548, reply_markup=markup)
 
 def polling():
-    knwon_tickets = []
+    sqlite = db()
     logger.info("Polling started")
     while True:
         json = get_page()
@@ -51,7 +74,7 @@ def polling():
             tickets = get_tickets_info(json)
             for ticket in tickets:
                 logger.info(f"Find new ticket {ticket.id}")
-                if ticket.id not in knwon_tickets: knwon_tickets.append(ticket.id)
+                if not sqlite.check_ticket(ticket.id): sqlite.add_ticket(ticket.id,ticket.title)
                 else:
                     continue
                 send_message(f'''🟢Новый тикет🟢 \
