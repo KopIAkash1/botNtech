@@ -3,7 +3,9 @@ import config
 import time
 import urllib3
 import utils.ticketsAPI as ticketsAPI 
+import requests
 
+from urllib.parse import urlencode
 from datetime import datetime as dt
 from threading import Thread
 from telebot import types
@@ -28,6 +30,21 @@ callback_handlers.init_all_callback_handlers(bot)
 def is_tagging(message):
     return f'@{bot.get_me().username}' in message.text
 
+
+def download_schedule():
+    logger.info("Trying download schedule from Yandex Disk")
+    base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
+    public_url = 'https://disk.360.yandex.ru/i/HeBXK_ISYV-6Dw' # Schedule file link
+    request_url = base_url + urlencode(dict(public_key=public_url))
+    response = requests.get(request_url)
+    print(response.json())
+    download_url = response.json()['href'] # final link to download file
+    logger.info(f"Get {response.status_code} and link {download_url}")
+    download_data = requests.get(download_url)
+    with open('schedule.xlsx', 'wb') as file:
+         file.write(download_data.content)
+    logger.info(f"Schedule file saved")
+
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
     current_user, next_user = ticketsAPI.read_schedule()
@@ -46,6 +63,7 @@ def schedule_message():
             if (dt.now().hour == 6 + config.timezone or dt.now().hour == 18 + config.timezone) and message_sended != True:
                 assignee_time_message()
                 message_sended = True
+                download_schedule()
             time.sleep(30)
 
 if __name__ == "__main__":
