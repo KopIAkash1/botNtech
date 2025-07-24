@@ -5,6 +5,7 @@ import re
 from bs4 import BeautifulSoup
 from loguru import logger
 from datetime import datetime as dt
+from openpyxl import load_workbook
 
 from pandas import read_excel
 from docxtpl import DocxTemplate
@@ -12,7 +13,9 @@ from json import loads
 from os import path, remove
 
 def read_schedule():
-    table = read_excel('./schedule.xlsx', header=None)
+    sheet_names = load_workbook('./schedule.xlsx').sheetnames
+    current_sheet_name = sheet_names[0]
+    table = read_excel('./schedule.xlsx', sheet_name=current_sheet_name, header=None)
     current_user=""
     next_user=""
     current_day = str(dt.now().date())
@@ -21,6 +24,13 @@ def read_schedule():
     while True:
         column += 1
         value = str(table.iloc[0,column]).split(" ")[0]
+        if column == 34:
+            if current_sheet_name == sheet_names:
+                logger.info(f"Can't find user in {sheet_names[0]} and {sheet_names[1]} tables")
+                return None, None
+            current_sheet_name = sheet_names[1]
+            table = read_excel('./schedule.xlsx', sheet_name=current_sheet_name, header=None)
+            column = 3
         if value == current_day:
             for i in range(2,8):
                 value = str(table.iloc[i, column])
