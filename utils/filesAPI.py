@@ -23,7 +23,6 @@ def read_schedule():
     column = 2
     while True:
         column += 1
-        value = str(table.iloc[0,column]).split(" ")[0]
         if column == 34:
             if current_sheet_name == sheet_names:
                 logger.info(f"Can't find user in {sheet_names[0]} and {sheet_names[1]} tables")
@@ -31,6 +30,7 @@ def read_schedule():
             current_sheet_name = sheet_names[1]
             table = read_excel('./schedule.xlsx', sheet_name=current_sheet_name, header=None)
             column = 3
+        value = str(table.iloc[0,column]).split(" ")[0]
         if value == current_day:
             for i in range(2,8):
                 value = str(table.iloc[i, column])
