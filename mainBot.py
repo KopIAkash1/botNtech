@@ -34,7 +34,7 @@ def is_tagging(message):
 def download_schedule():
     logger.info("Trying download schedule from Yandex Disk")
     base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
-    public_url = 'https://disk.360.yandex.ru/i/HeBXK_ISYV-6Dw' # Schedule file link
+    public_url = config.yandex_schedule_link # Schedule file link
     request_url = base_url + urlencode(dict(public_key=public_url))
     response = requests.get(request_url)
     print(response.json())
