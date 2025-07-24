@@ -33,17 +33,21 @@ def is_tagging(message):
 
 def download_schedule():
     logger.info("Trying download schedule from Yandex Disk")
-    base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
-    public_url = config.yandex_schedule_link # Schedule file link
-    request_url = base_url + urlencode(dict(public_key=public_url))
-    response = requests.get(request_url)
-    print(response.json())
-    download_url = response.json()['href'] # final link to download file
-    logger.info(f"Get {response.status_code} and link {download_url}")
-    download_data = requests.get(download_url)
-    with open('schedule.xlsx', 'wb') as file:
-         file.write(download_data.content)
-    logger.info(f"Schedule file saved")
+    try:
+        base_url = 'https://cloud-api.yandex.net/v1/disk/public/resources/download?'
+        public_url = config.yandex_schedule_link # Schedule file link
+        request_url = base_url + urlencode(dict(public_key=public_url))
+        response = requests.get(request_url)
+        print(response.json())
+        download_url = response.json()['href'] # final link to download file
+        logger.info(f"Get {response.status_code} and link {download_url}")
+        download_data = requests.get(download_url)
+        with open('schedule.xlsx', 'wb') as file:
+            file.write(download_data.content)
+        logger.info(f"Schedule file saved")
+    except Exception as e:
+        logger.error(f"Get Exception: {e}")
+
 
 @bot.message_handler(commands=["pong"])
 def assignee_time_message():
